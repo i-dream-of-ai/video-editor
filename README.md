@@ -1,32 +1,38 @@
-# video-jungle-mcp MCP server
+# Video Jungle MCP server
 
-A MCP server project
+Upload, edit, and generate videos from your LLM
 
 ## Components
 
 ### Resources
 
 The server implements a simple note storage system with:
-- Custom note:// URI scheme for accessing individual notes
-- Each note resource has a name, description and text/plain mimetype
+- Custom vj:// URI scheme for accessing individual videos and project
+- Each project resource has a name, description
 
 ### Prompts
 
-The server provides a single prompt:
-- summarize-notes: Creates summaries of all stored notes
-  - Optional "style" argument to control detail level (brief/detailed)
-  - Generates prompt combining all current notes with style preference
+WIP
 
 ### Tools
 
-The server implements one tool:
-- add-note: Adds a new note to the server
-  - Takes "name" and "content" as required string arguments
-  - Updates server state and notifies clients of resource changes
+The server implements a few tools:
+- list-videos: List all your Videos on Video Jungle
+  - Returns a list of all videos available
+- add-video: Add a video from a URL
+  - Returns an vj:// URI to reference the Video file
+- search-videos: Search videos using embeddings
+  - Returns video matches based upon embeddings and keywords
+- generate-edit: Generate an edit based upon Video Files
+  - Returns a URI for finished video edit
 
 ## Configuration
 
-[TODO: Add configuration details specific to your implementation]
+You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Set this as an environment variable named `VJ_API_KEY`.
+
+```bash
+$ export VJ_API_KEY=yourapikey
+```
 
 ## Quickstart
 
