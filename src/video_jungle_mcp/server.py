@@ -215,7 +215,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text="Videos:\n" + "\n".join(f"- {video.name} ({video.id})" for video in videos),
+                text="Videos:\n" + "\n".join(f"- {video.name} vj://{video.id})" for video in videos),
             )
         ]
 

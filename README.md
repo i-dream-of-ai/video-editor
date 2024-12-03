@@ -1,5 +1,5 @@
-# Video Jungle MCP server
-
+# Video Jungle MCP server (WIP)
+ 
 Upload, edit, and generate videos from your LLM
 
 ## Components
