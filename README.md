@@ -53,7 +53,8 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
         "--directory",
         "/Users/stankley/Development/video-jungle-mcp",
         "run",
-        "video-jungle-mcp"
+        "video-jungle-mcp",
+        "YOURAPIKEY"
       ]
     }
   }
@@ -67,7 +68,8 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
     "video-jungle-mcp": {
       "command": "uvx",
       "args": [
-        "video-jungle-mcp"
+        "video-jungle-mcp",
+        "YOURAPIKEY"
       ]
     }
   }

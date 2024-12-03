@@ -22,17 +22,17 @@ tools = ["list-videos", "add-video", "search-videos", "generate-edit"]
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
     """
-    List available note resources.
-    Each note is exposed as a resource with a custom note:// URI scheme.
+    List available video files.
+    Each video files is available at a specific url
     """
     videos = vj.video_files.list()
 
     return [
         types.Resource(
-            uri=AnyUrl(f"vj://{video.id}"),
+            uri=AnyUrl(f"vj://video-file/{video.id}"),
             name=f"Video: {video.name}",
             description=f"A video with the following description: {video.description}",
-            mimeType="text/plain",
+            mimeType="video/mp4",
         )
         for video in videos
     ]
