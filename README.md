@@ -6,7 +6,7 @@ Upload, edit, and generate videos from your LLM
 
 ### Resources
 
-The server implements a simple note storage system with:
+The server implements an interface to upload, generate, and edit videos with:
 - Custom vj:// URI scheme for accessing individual videos and project
 - Each project resource has a name, description
 
