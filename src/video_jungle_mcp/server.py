@@ -112,11 +112,6 @@ async def handle_list_tools() -> list[types.Tool]:
     """
     return [
         types.Tool(
-            name="list-videos",
-            description="List all videos",
-            inputSchema=None,
-        ),
-        types.Tool(
             name="add-video",
             description="Upload video from URL",
             inputSchema={
@@ -139,28 +134,6 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["query"],
             },
         ),
-        types.Tool(
-            name="generate-edit",
-            description="Generate an edit from video clips",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "clips": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "name": {"type": "string"},
-                                "start": {"type": "number"},
-                                "end": {"type": "number"},
-                            },
-                            "required": ["name", "start", "end"],
-                        },
-                    },
-                },
-                "required": ["clips"],
-            },
-        )
     ]
 
 @server.call_tool()
@@ -176,15 +149,6 @@ async def handle_call_tool(
 
     if not arguments:
         raise ValueError("Missing arguments")
-
-    if name == "list-videos":
-        videos = vj.video_files.list()
-        return [
-            types.TextContent(
-                type="text",
-                text="Videos:\n" + "\n".join(f"- {video.name} ({video.id})" for video in videos),
-            )
-        ]
     
     if name == "add-video" and arguments:
         name = arguments.get("name")
