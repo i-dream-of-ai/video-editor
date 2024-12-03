@@ -6,9 +6,9 @@ import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from pydantic import AnyUrl
 import mcp.server.stdio
-import os
+import sys
 
-VJ_API_KEY = os.getenv("VJ_API_KEY")
+VJ_API_KEY = sys.argv[1]
 
 if not VJ_API_KEY:
     raise Exception("VJ_API_KEY environment variable is required")

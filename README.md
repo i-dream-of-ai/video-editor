@@ -28,10 +28,10 @@ The server implements a few tools:
 
 ## Configuration
 
-You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Set this as an environment variable named `VJ_API_KEY`.
+You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Use this to start Video Jungle MCP:
 
 ```bash
-$ export VJ_API_KEY=yourapikey
+$ uv run video-jungle-mcp YOURAPIKEY
 ```
 
 ## Quickstart
