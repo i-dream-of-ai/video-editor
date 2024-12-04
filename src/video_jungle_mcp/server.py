@@ -30,8 +30,8 @@ async def handle_list_resources() -> list[types.Resource]:
     return [
         types.Resource(
             uri=AnyUrl(f"vj://video-file/{video.id}"),
-            name=f"Video: {video.name}",
-            description=f"A video with the following description: {video.description}",
+            name=f"Video Jungle Video: {video.name}",
+            description=f"User provided description: {video.description}",
             mimeType="video/mp4",
         )
         for video in videos
@@ -40,15 +40,15 @@ async def handle_list_resources() -> list[types.Resource]:
 @server.read_resource()
 async def handle_read_resource(uri: AnyUrl) -> str:
     """
-    Read a specific note's content by its URI.
-    The note name is extracted from the URI host component.
+    Read a video's content by its URI.
+    The video id is extracted from the URI host component.
     """
     if uri.scheme != "vj":
         raise ValueError(f"Unsupported URI scheme: {uri.scheme}")
 
     id = uri.path
     if id is not None:
-        id = id.lstrip("/")
+        id = id.lstrip("/video-file/")
         video = vj.video_files.get(id)
         return video.model_dump_json()
     raise ValueError(f"Video not found: {id}")
@@ -179,7 +179,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text="Videos:\n" + "\n".join(f"- {video['video']['name']} vj:///video-file/{video['video_id']})" for video in videos),
+                text="Videos:\n" + "\n".join(f"- {video['video']['name']} vj://video-file/{video['video_id']}" for video in videos),
             )
         ]
 
