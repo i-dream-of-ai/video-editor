@@ -179,7 +179,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text="Videos:\n" + "\n".join(f"- {video['video']['name']} vj://video-file/{video['video_id']}" for video in videos),
+                text="Videos:\n" + "\n".join(f"- {video['video']['name']} at vj://video-file/{video['video_id']} \n - URL to view video: {video['video']['url']} \n - Scene changes in video: {video['scene_changes']} \n - Video manuscript: {video['script']}" for video in videos),
             )
         ]
 
