@@ -17,14 +17,11 @@ WIP
 ### Tools
 
 The server implements a few tools:
-- list-videos: List all your Videos on Video Jungle
-  - Returns a list of all videos available
 - add-video: Add a video from a URL
   - Returns an vj:// URI to reference the Video file
 - search-videos: Search videos using embeddings
   - Returns video matches based upon embeddings and keywords
-- generate-edit: Generate an edit based upon Video Files
-  - Returns a URI for finished video edit
+
 
 ## Configuration
 
@@ -39,6 +36,8 @@ $ uv run video-jungle-mcp YOURAPIKEY
 ### Install
 
 #### Claude Desktop
+
+You'll need to adjust your `claude_desktop_config.json` manually:
 
 On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
