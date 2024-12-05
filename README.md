@@ -23,7 +23,8 @@ The server implements a few tools:
   - Returns video matches based upon embeddings and keywords
 - generate-edit-from-videos
   - Generates a rendered video edit from a set of video files
-
+- generate-edit-from-single-video
+  - Generate an edit from a single input video file
 
 ## Configuration
 

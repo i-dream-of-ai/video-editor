@@ -160,7 +160,24 @@ async def handle_list_tools() -> list[types.Tool]:
                                                        "start_time": "string",
                                                        "end_time": "string",}},
                 },
-                "required": ["edit"],
+                "required": ["edit", "project_id"],
+            },
+        ),
+        types.Tool(
+            name="generate-video-from-single-video",
+            description="Generate a video edit from a single video",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_id": {"type": "string"},
+                    "resolution": {"type": "string"},
+                    "video_id": {"type": "string"},
+                    "edit": {"type": "array", "cuts": {
+                                                       "start_time": "string",
+                                                       "end_time": "string",}
+                                                       },
+                },
+                "required": ["edit", "project_id", "video_id"],
             },
         ),
     ]
@@ -224,6 +241,47 @@ async def handle_call_tool(
             resolution = "1080x1920"
         
         updated_edit = [{**cut, "type": "videofile", 
+                        "audio_levels": [{
+                         "audio_level": "0.5",
+                         "start_time": cut["start_time"],
+                         "end_time": cut["end_time"],}]
+                         } for cut in edit]
+
+        json_edit = {
+            "video_edit_version": "1.0",
+            "video_output_format": "mp4",
+            "video_output_resolution": resolution,
+            "video_output_fps": 30.0,
+            "video_output_filename": "output_video.mp4",
+            "video_series_sequential": updated_edit
+        }
+
+        edit = vj.projects.render_edit(project, json_edit)
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Generated edit with id: {edit['id']} and raw edit info: {updated_edit}",
+            )
+        ]
+    if name == "generate-video-from-single-video" and arguments:
+        edit = arguments.get("edit")
+        project = arguments.get("project_id")
+        video_id = arguments.get("video_id")
+
+        resolution = arguments.get("resolution")
+
+        if not edit:
+            raise ValueError("Missing edit")
+        if not project:
+            raise ValueError("Missing project")
+        if not video_id:
+            raise ValueError("Missing video_id")
+        if not resolution:
+            resolution = "1080x1920"
+        
+        updated_edit = [{**cut, "video_id": video_id,
+                        "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
                          "start_time": cut["start_time"],
