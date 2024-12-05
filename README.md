@@ -21,6 +21,8 @@ The server implements a few tools:
   - Returns an vj:// URI to reference the Video file
 - search-videos: Search videos using embeddings
   - Returns video matches based upon embeddings and keywords
+- generate-edit-from-videos
+  - Generates a rendered video edit from a set of video files
 
 
 ## Configuration

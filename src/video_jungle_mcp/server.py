@@ -26,8 +26,9 @@ async def handle_list_resources() -> list[types.Resource]:
     Each video files is available at a specific url
     """
     videos = vj.video_files.list()
+    projects = vj.projects.list()
 
-    return [
+    videos = [
         types.Resource(
             uri=AnyUrl(f"vj://video-file/{video.id}"),
             name=f"Video Jungle Video: {video.name}",
@@ -36,6 +37,19 @@ async def handle_list_resources() -> list[types.Resource]:
         )
         for video in videos
     ]
+
+    projects = [
+        types.Resource(
+            uri=AnyUrl(f"vj://project/{project.id}"),
+            name=f"Video Jungle Project: {project.name}",
+            description=f"Project description: {project.description}",
+            mimeType="application/json",
+        )
+        for project in projects
+    ]
+
+    return videos + projects
+
 
 @server.read_resource()
 async def handle_read_resource(uri: AnyUrl) -> str:
@@ -134,6 +148,21 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["query"],
             },
         ),
+        types.Tool(
+            name="generate-edit-from-videos",
+            description="Generate an edit from videos",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_id": {"type": "string"},
+                    "resolution": {"type": "string"},
+                    "edit": {"type": "array", "cuts": {"video_id": "string",
+                                                       "start_time": "string",
+                                                       "end_time": "string",}},
+                },
+                "required": ["edit"],
+            },
+        ),
     ]
 
 @server.call_tool()
@@ -180,6 +209,42 @@ async def handle_call_tool(
             types.TextContent(
                 type="text",
                 text="Videos:\n" + "\n".join(f"- {video['video']['name']} at vj://video-file/{video['video_id']} \n - URL to view video: {video['video']['url']} \n - Scene changes in video: {video['scene_changes']} \n - Video    manuscript: {video['script']}" for video in videos),
+            )
+        ]
+    if name == "generate-edit-from-videos" and arguments:
+        edit = arguments.get("edit")
+        project = arguments.get("project_id")
+        resolution = arguments.get("resolution")
+
+        if not edit:
+            raise ValueError("Missing edit")
+        if not project:
+            raise ValueError("Missing project")
+        if not resolution:
+            resolution = "1080x1920"
+        
+        updated_edit = [{**cut, "type": "videofile", 
+                        "audio_levels": [{
+                         "audio_level": "0.5",
+                         "start_time": cut["start_time"],
+                         "end_time": cut["end_time"],}]
+                         } for cut in edit]
+
+        json_edit = {
+            "video_edit_version": "1.0",
+            "video_output_format": "mp4",
+            "video_output_resolution": resolution,
+            "video_output_fps": 30.0,
+            "video_output_filename": "output_video.mp4",
+            "video_series_sequential": updated_edit
+        }
+
+        edit = vj.projects.render_edit(project, json_edit)
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Generated edit with id: {edit['id']} and raw edit info: {updated_edit}",
             )
         ]
 
