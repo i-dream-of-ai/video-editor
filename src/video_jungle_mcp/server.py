@@ -164,7 +164,7 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
-            name="generate-video-from-single-video",
+            name="generate-edit-from-single-video",
             description="Generate a video edit from a single video",
             inputSchema={
                 "type": "object",
@@ -264,7 +264,7 @@ async def handle_call_tool(
                 text=f"Generated edit with id: {edit['id']} and raw edit info: {updated_edit}",
             )
         ]
-    if name == "generate-video-from-single-video" and arguments:
+    if name == "generate-edit-from-single-video" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")
         video_id = arguments.get("video_id")
