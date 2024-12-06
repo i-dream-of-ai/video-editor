@@ -245,8 +245,8 @@ async def handle_call_tool(
         updated_edit = [{**cut, "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "start_time": cut["start_time"],
-                         "end_time": cut["end_time"],}]
+                         "start_time": cut.start_time
+                         "end_time": cut.end_time,}]
                          } for cut in edit]
 
         json_edit = {
@@ -304,8 +304,8 @@ async def handle_call_tool(
                         "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "start_time": cut["start_time"],
-                         "end_time": cut["end_time"],}]
+                         "start_time": cut.start_time,
+                         "end_time": cut.end_time,}]
                          } for cut in edit]
 
         json_edit = {
