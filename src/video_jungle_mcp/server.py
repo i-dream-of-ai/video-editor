@@ -168,8 +168,8 @@ async def handle_list_tools() -> list[types.Tool]:
                     "project_id": {"type": "string"},
                     "resolution": {"type": "string"},
                     "edit": {"type": "array", "cuts": {"video_id": "string",
-                                                       "start_time": "string",
-                                                       "end_time": "string",}},
+                                                       "video_start_time": "time",
+                                                       "video_end_time": "time",}},
                 },
                 "required": ["edit", "project_id"],
             },
@@ -184,8 +184,8 @@ async def handle_list_tools() -> list[types.Tool]:
                     "resolution": {"type": "string"},
                     "video_id": {"type": "string"},
                     "edit": {"type": "array", "cuts": {
-                                                       "start_time": "string",
-                                                       "end_time": "string",}
+                                                       "video_start_time": "time",
+                                                       "video_end_time": "time",}
                                                        },
                 },
                 "required": ["edit", "project_id", "video_id"],
@@ -257,8 +257,8 @@ async def handle_call_tool(
         updated_edit = [{**cut, "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "video_start_time": cut["start_time"],
-                         "video_end_time": cut["end_time"],}]
+                         "start_time": cut["video_start_time"],
+                         "end_time": cut["video_end_time"],}]
                          } for cut in edit]
 
         logging.info(f"updated edit is: {updated_edit}")
@@ -318,11 +318,13 @@ async def handle_call_tool(
             resolution = "1080x1920"
         
         updated_edit = [{**cut, "video_id": video_id,
+                        "video_start_time": cut["start_time"],
+                        "video_end_time": cut["end_time"],
                         "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "video_start_time": cut["start_time"],
-                         "video_end_time": cut["end_time"],}]
+                         "start_time": cut["video_start_time"],
+                         "end_time": cut["video_end_time"],}]
                          } for cut in edit]
         
         logging.info(f"updated edit is: {updated_edit}")
