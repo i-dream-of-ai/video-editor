@@ -26,7 +26,7 @@ async def handle_list_resources() -> list[types.Resource]:
     Each video files is available at a specific url
     """
     videos = vj.video_files.list()
-    projects = vj.projects.list()
+    #projects = vj.projects.list()
 
     videos = [
         types.Resource(
@@ -38,6 +38,7 @@ async def handle_list_resources() -> list[types.Resource]:
         for video in videos
     ]
 
+    '''
     projects = [
         types.Resource(
             uri=AnyUrl(f"vj://project/{project.id}"),
@@ -46,9 +47,9 @@ async def handle_list_resources() -> list[types.Resource]:
             mimeType="application/json",
         )
         for project in projects
-    ]
+    ]'''
 
-    return videos + projects
+    return videos # + projects
 
 
 @server.read_resource()
@@ -171,7 +172,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {
                     "project_id": {"type": "string"},
                     "resolution": {"type": "string"},
-                    "video_id": {"type": "string"},
+                    "video_id": {"type": ""},
                     "edit": {"type": "array", "cuts": {
                                                        "start_time": "string",
                                                        "end_time": "string",}
@@ -232,6 +233,7 @@ async def handle_call_tool(
         edit = arguments.get("edit")
         project = arguments.get("project_id")
         resolution = arguments.get("resolution")
+        created = False
 
         if not edit:
             raise ValueError("Missing edit")
@@ -256,12 +258,28 @@ async def handle_call_tool(
             "video_series_sequential": updated_edit
         }
 
+        try: 
+            proj = vj.projects.get(project)
+        except Exception as e:
+            proj = vj.projects.create(name=project, description=f"Claude generated project")
+            project = proj.id
+            created = True
+
         edit = vj.projects.render_edit(project, json_edit)
 
+        if created:
+            # we created a new project so let the user / LLM know
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Created new project {proj.name} and created edit {edit['id']} with raw edit info: {updated_edit}"
+                )
+            ]
+        
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit with id: {edit['id']} and raw edit info: {updated_edit}",
+                text=f"Generated edit in existing project {proj.name} with id: {edit['id']} and raw edit info: {updated_edit}",
             )
         ]
     if name == "generate-edit-from-single-video" and arguments:
@@ -270,6 +288,8 @@ async def handle_call_tool(
         video_id = arguments.get("video_id")
 
         resolution = arguments.get("resolution")
+        created = False 
+
 
         if not edit:
             raise ValueError("Missing edit")
@@ -297,12 +317,28 @@ async def handle_call_tool(
             "video_series_sequential": updated_edit
         }
 
+        try: 
+            proj = vj.projects.get(project)
+        except Exception as e:
+            proj = vj.projects.create(name=project, description=f"Claude generated project")
+            project = proj.id
+            created = True
+
         edit = vj.projects.render_edit(project, json_edit)
+
+        if created:
+            # we created a new project so let the user / LLM know
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Created new project {proj.name} and created edit {edit['id']} with raw edit info: {updated_edit}"
+                )
+            ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit with id: {edit['id']} and raw edit info: {updated_edit}",
+                text=f"Generated edit in project {proj.name} with id: {edit['id']} and raw edit info: {updated_edit}",
             )
         ]
 
