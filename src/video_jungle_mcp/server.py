@@ -8,7 +8,17 @@ from pydantic import AnyUrl
 import mcp.server.stdio
 import sys
 
+import logging
+
 VJ_API_KEY = sys.argv[1]
+
+
+# Configure the logging
+logging.basicConfig(
+    filename='app.log',           # Name of the log file
+    level=logging.INFO,           # Log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+)
 
 if not VJ_API_KEY:
     raise Exception("VJ_API_KEY environment variable is required")
@@ -235,6 +245,8 @@ async def handle_call_tool(
         resolution = arguments.get("resolution")
         created = False
 
+        logging.info(f"edit is: {edit} and the type is: {type(edit)}")
+
         if not edit:
             raise ValueError("Missing edit")
         if not project:
@@ -245,9 +257,11 @@ async def handle_call_tool(
         updated_edit = [{**cut, "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "start_time": cut["start_time"]
-                         "end_time": cut["end_time"],}]
+                         "video_start_time": cut["start_time"],
+                         "video_end_time": cut["end_time"],}]
                          } for cut in edit]
+
+        logging.info(f"updated edit is: {updated_edit}")
 
         json_edit = {
             "video_edit_version": "1.0",
@@ -264,6 +278,8 @@ async def handle_call_tool(
             proj = vj.projects.create(name=project, description=f"Claude generated project")
             project = proj.id
             created = True
+
+        logging.info(f"video edit is: {json_edit}")
 
         edit = vj.projects.render_edit(project, json_edit)
 
@@ -290,6 +306,7 @@ async def handle_call_tool(
         resolution = arguments.get("resolution")
         created = False 
 
+        logging.info(f"edit is: {edit} and the type is: {type(edit)}")
 
         if not edit:
             raise ValueError("Missing edit")
@@ -304,9 +321,11 @@ async def handle_call_tool(
                         "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
-                         "start_time": cut["start_time"],
-                         "end_time": cut["end_time"],}]
+                         "video_start_time": cut["start_time"],
+                         "video_end_time": cut["end_time"],}]
                          } for cut in edit]
+        
+        logging.info(f"updated edit is: {updated_edit}")
 
         json_edit = {
             "video_edit_version": "1.0",
@@ -323,6 +342,8 @@ async def handle_call_tool(
             proj = vj.projects.create(name=project, description=f"Claude generated project")
             project = proj.id
             created = True
+
+        logging.info(f"video edit is: {json_edit}")
 
         edit = vj.projects.render_edit(project, json_edit)
 
