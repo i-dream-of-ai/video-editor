@@ -17,7 +17,7 @@ vj = ApiClient(VJ_API_KEY)
 
 server = Server("video-jungle-mcp")
 
-tools = ["add-video", "search-videos"]
+tools = ["add-video", "search-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
