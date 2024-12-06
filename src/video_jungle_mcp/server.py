@@ -172,7 +172,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {
                     "project_id": {"type": "string"},
                     "resolution": {"type": "string"},
-                    "video_id": {"type": ""},
+                    "video_id": {"type": "string"},
                     "edit": {"type": "array", "cuts": {
                                                        "start_time": "string",
                                                        "end_time": "string",}
