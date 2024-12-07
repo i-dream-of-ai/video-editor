@@ -51,11 +51,11 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   <summary>Development/Unpublished Servers Configuration</summary>
   ```
   "mcpServers": {
-    "video-jungle-mcp": {
+    "video-editor-mcp": {
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/stankley/Development/video-jungle-mcp",
+        "/Users/YOURDIRECTORY/video-jungle-mcp",
         "run",
         "video-editor-mcp",
         "YOURAPIKEY"
@@ -69,7 +69,7 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   <summary>Published Servers Configuration</summary>
   ```
   "mcpServers": {
-    "video-jungle-mcp": {
+    "video-editor-mcp": {
       "command": "uvx",
       "args": [
         "video-editor-mcp",
@@ -79,6 +79,8 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
   ```
 </details>
+
+Be sure to replace the directories with the directories you've placed the repository in on **your** computer.
 
 ## Development
 
@@ -115,8 +117,10 @@ experience, we strongly recommend using the [MCP Inspector](https://github.com/m
 
 You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
+(Be sure to replace YOURDIRECTORY and YOURAPIKEY with the directory this repo is in, and your Video Jungle API key, found in the settings page.)
+
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/stankley/Development/video-jungle-mcp run video-editor-mcp YOURAPIKEY
+npx @modelcontextprotocol/inspector uv --directory /Users/YOURDIRECTORY/video-jungle-mcp run video-editor-mcp YOURAPIKEY
 ```
 
 
