@@ -121,3 +121,15 @@ npx @modelcontextprotocol/inspector uv --directory /Users/stankley/Development/v
 
 
 Upon launching, the Inspector will display a URL that you can access in your browser to begin debugging.
+
+Additionally, I've added logging to `app.log` in the project directory. You can add logging to diagnose API calls via a:
+
+```
+logging.info("this is a test log")
+```
+
+A reasonable way to follow along as you're workin on the project is to open a terminal session and do a:
+
+```bash
+$ tail -f app.log
+```
