@@ -1,6 +1,6 @@
-# Video Jungle Video Editing MCP server
+# Video Editing MCP server
  
-Upload, edit, and generate videos from everyone's favorite LLM
+Upload, edit, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
 [![PyPI version](https://badge.fury.io/py/video-editor-mcp.svg)](https://badge.fury.io/py/video-editor-mcp)
 
