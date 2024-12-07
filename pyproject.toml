@@ -1,11 +1,11 @@
 [project]
 name = "video-editor-mcp"
-version = "0.1.3"
+version = "0.1.4"
 description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [ "mcp>=1.0.0",]
-homepage = "https://github.com/burningion/video-jungle-mcp"
+homepage = "https://github.com/burningion/video-editing-mcp"
 
 [[project.authors]]
 name = "Kirk Kaiser"
@@ -19,5 +19,5 @@ build-backend = "hatchling.build"
 video-editor-mcp = "video_editor_mcp:main"
 
 [project.urls]
-Homepage = "https://github.com/burningion/video-jungle-mcp"
-Issues = "https://github.com/burningion/video-jungle-mcp/issues"
+Homepage = "https://github.com/burningion/video-editing-mcp"
+Issues = "https://github.com/burningion/video-editing-mcp/issues"

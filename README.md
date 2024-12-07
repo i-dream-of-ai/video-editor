@@ -2,6 +2,8 @@
  
 Upload, edit, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
+You'll need to sign up for an account at [Video Jungle](https://app.video-jungle.com/register) in order to use this tool, and add your API key.
+
 [![PyPI version](https://badge.fury.io/py/video-editor-mcp.svg)](https://badge.fury.io/py/video-editor-mcp)
 
 ## Components
@@ -30,7 +32,9 @@ The server implements a few tools:
 
 ### Using Tools in Practice
 
-In order to use the tools, you'll need to first add videos. Here's an example prompt:
+In order to use the tools, you'll need to sign up for Video Jungle and add your API key.
+
+From there, you'll need to add videos. Here's an example prompt to do so:
 
 ```
 can you download the video at https://www.youtube.com/shorts/RumgYaH5XYw and name it fly traps?
