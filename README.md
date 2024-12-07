@@ -2,6 +2,8 @@
  
 Upload, edit, and generate videos from everyone's favorite LLM
 
+[![PyPI version](https://badge.fury.io/py/video-editor-mcp.svg)](https://pypi.org/project/video-editor-mcp/)
+
 ## Components
 
 ### Resources

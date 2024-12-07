@@ -5,6 +5,8 @@ description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Edi
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [ "mcp>=1.0.0",]
+homepage = "https://github.com/burningion/video-jungle-mcp"
+
 [[project.authors]]
 name = "Kirk Kaiser"
 email = "kirk@zothcorp.com"
