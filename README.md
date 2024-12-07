@@ -54,7 +54,7 @@ can you create an edit of all the times the video says "fly trap"?
 
 ## Configuration
 
-You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Use this to start Video Jungle MCP:
+You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your [API key](https://app.video-jungle.com/profile/settings). Then, use this to start Video Jungle MCP:
 
 ```bash
 $ uv run video-editor-mcp YOURAPIKEY
@@ -144,7 +144,7 @@ You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-
 (Be sure to replace YOURDIRECTORY and YOURAPIKEY with the directory this repo is in, and your Video Jungle API key, found in the settings page.)
 
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/YOURDIRECTORY/video-jungle-mcp run video-editor-mcp YOURAPIKEY
+npx @modelcontextprotocol/inspector uv --directory /Users/YOURDIRECTORY/video-editor-mcp run video-editor-mcp YOURAPIKEY
 ```
 
 
