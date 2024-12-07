@@ -255,7 +255,6 @@ async def handle_call_tool(
             resolution = "1080x1920"
         
         updated_edit = [{**cut, "type": "videofile", 
-                        "audio_overlay": [], # TODO: Put this back in
                         "audio_levels": [{
                          "audio_level": "0.5",
                          "start_time": cut["video_start_time"],
@@ -270,6 +269,7 @@ async def handle_call_tool(
             "video_output_resolution": resolution,
             "video_output_fps": 30.0,
             "video_output_filename": "output_video.mp4",
+            "audio_overlay": [], # TODO: add this back in 
             "video_series_sequential": updated_edit
         }
 
@@ -322,7 +322,6 @@ async def handle_call_tool(
                         "video_start_time": cut["start_time"],
                         "video_end_time": cut["end_time"],
                         "type": "videofile", 
-                        "audio_overlay": [], # TODO: add this back in 
                         "audio_levels": [{
                          "audio_level": "0.5",
                          "start_time": cut["video_start_time"],
@@ -337,6 +336,7 @@ async def handle_call_tool(
             "video_output_resolution": resolution,
             "video_output_fps": 30.0,
             "video_output_filename": "output_video.mp4",
+            "audio_overlay": [], # TODO: add this back in 
             "video_series_sequential": updated_edit
         }
 
