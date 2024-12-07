@@ -1,13 +1,10 @@
 [project]
-name = "video-jungle-mcp"
+name = "video-editor-mcp"
 version = "0.1.0"
-description = "A MCP server project"
+description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
- "mcp>=1.0.0",
- "videojungle>=0.1.25",
-]
+dependencies = [ "mcp>=1.0.0",]
 [[project.authors]]
 name = "Kirk Kaiser"
 email = "kirk@zothcorp.com"
