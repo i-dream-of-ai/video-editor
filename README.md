@@ -28,6 +28,26 @@ The server implements a few tools:
 - generate-edit-from-single-video
   - Generate an edit from a single input video file
 
+### Using Tools in Practice
+
+In order to use the tools, you'll need to first add videos. Here's an example prompt:
+
+```
+can you download the video at https://www.youtube.com/shorts/RumgYaH5XYw and name it fly traps?
+```
+
+Once you've got a video downloaded and analyzed, you can then do queries on it using search videos:
+
+```
+can you search my videos for fly traps?
+```
+
+Finally, you can use these search results to generate an edit:
+
+```
+can you create an edit of all the times the video says "fly trap"?
+```
+
 ## Configuration
 
 You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Use this to start Video Jungle MCP:
