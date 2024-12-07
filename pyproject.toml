@@ -1,6 +1,6 @@
 [project]
 name = "video-editor-mcp"
-version = "0.1.1"
+version = "0.1.2"
 description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,4 +16,8 @@ requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
-video-jungle-mcp = "video_jungle_mcp:main"
+vido-editor-mcp = "video_editor_mcp:main"
+
+[project.urls]
+Homepage = "https://github.com/burningion/video-jungle-mcp"
+Issues = "https://github.com/burningion/video-jungle-mcp/issues"

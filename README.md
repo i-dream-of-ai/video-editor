@@ -33,7 +33,7 @@ The server implements a few tools:
 You must login to [Video Jungle settings](https://app.video-jungle.com/profile/settings), and get your API key. Use this to start Video Jungle MCP:
 
 ```bash
-$ uv run video-jungle-mcp YOURAPIKEY
+$ uv run video-editor-mcp YOURAPIKEY
 ```
 
 ## Quickstart
@@ -57,7 +57,7 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
         "--directory",
         "/Users/stankley/Development/video-jungle-mcp",
         "run",
-        "video-jungle-mcp",
+        "video-editor-mcp",
         "YOURAPIKEY"
       ]
     }
@@ -72,7 +72,7 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
     "video-jungle-mcp": {
       "command": "uvx",
       "args": [
-        "video-jungle-mcp",
+        "video-editor-mcp",
         "YOURAPIKEY"
       ]
     }
@@ -116,7 +116,7 @@ experience, we strongly recommend using the [MCP Inspector](https://github.com/m
 You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/stankley/Development/video-jungle-mcp run video-jungle-mcp
+npx @modelcontextprotocol/inspector uv --directory /Users/stankley/Development/video-jungle-mcp run video-editor-mcp YOURAPIKEY
 ```
 
 
