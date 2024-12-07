@@ -1,6 +1,6 @@
-# Video Jungle MCP server (WIP)
+# Video Jungle MCP server
  
-Upload, edit, and generate videos from your LLM
+Upload, edit, and generate videos from everyone's favorite LLM
 
 ## Components
 
@@ -12,7 +12,7 @@ The server implements an interface to upload, generate, and edit videos with:
 
 ### Prompts
 
-WIP
+Coming soon.
 
 ### Tools
 
