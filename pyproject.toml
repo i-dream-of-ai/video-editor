@@ -1,10 +1,13 @@
 [project]
 name = "video-editor-mcp"
-version = "0.1.4"
+version = "0.1.5"
 description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [ "mcp>=1.0.0",]
+dependencies = [
+ "mcp>=1.0.0",
+ "videojungle>=0.1.25",
+]
 homepage = "https://github.com/burningion/video-editing-mcp"
 
 [[project.authors]]

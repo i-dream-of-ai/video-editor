@@ -79,7 +79,7 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/YOURDIRECTORY/video-jungle-mcp",
+        "/Users/YOURDIRECTORY/video-editor-mcp",
         "run",
         "video-editor-mcp",
         "YOURAPIKEY"
