@@ -1,4 +1,4 @@
-# Video Editing MCP server
+# Video Editor MCP server
  
 Upload, edit, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
