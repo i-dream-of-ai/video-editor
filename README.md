@@ -11,8 +11,9 @@ You'll need to sign up for an account at [Video Jungle](https://app.video-jungle
 ### Resources
 
 The server implements an interface to upload, generate, and edit videos with:
-- Custom vj:// URI scheme for accessing individual videos and project
+- Custom vj:// URI scheme for accessing individual videos and projects
 - Each project resource has a name, description
+- Search results are returned with metadata about what is in the video, and when, allowing for edit generation directly
 
 ### Prompts
 
@@ -42,6 +43,8 @@ Here's an example prompt to invoke the `add-video` tool:
 can you download the video at https://www.youtube.com/shorts/RumgYaH5XYw and name it fly traps?
 ```
 
+This will download a video from a URL, add it to your library, and analyze it for retrieval later. Analysis is multi-modal, so both audio and visual components can be queried against.
+
 **search-videos**
 
 Once you've got a video downloaded and analyzed, you can then do queries on it using the `search-videos` tool:
@@ -50,6 +53,8 @@ Once you've got a video downloaded and analyzed, you can then do queries on it u
 can you search my videos for fly traps?
 ```
 
+Search results contain relevant metadata for generating a video edit according to details discovered in the initial analysis.
+
 **generate-edit-from-videos**
 
 Finally, you can use these search results to generate an edit:
@@ -57,6 +62,8 @@ Finally, you can use these search results to generate an edit:
 ```
 can you create an edit of all the times the video says "fly trap"?
 ```
+
+(Currently), the video edits tool relies on the context within the current chat. 
 
 **generate-edit-from-single-video**
 
