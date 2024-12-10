@@ -34,22 +34,36 @@ The server implements a few tools:
 
 In order to use the tools, you'll need to sign up for Video Jungle and add your API key.
 
-From there, you'll need to add videos. Here's an example prompt to do so:
+**add-video**
+
+Here's an example prompt to invoke the `add-video` tool:
 
 ```
 can you download the video at https://www.youtube.com/shorts/RumgYaH5XYw and name it fly traps?
 ```
 
-Once you've got a video downloaded and analyzed, you can then do queries on it using search videos:
+**search-videos**
+
+Once you've got a video downloaded and analyzed, you can then do queries on it using the `search-videos` tool:
 
 ```
 can you search my videos for fly traps?
 ```
 
+**generate-edit-from-videos**
+
 Finally, you can use these search results to generate an edit:
 
 ```
 can you create an edit of all the times the video says "fly trap"?
+```
+
+**generate-edit-from-single-video**
+
+Finally, you can cut down an edit from a single, existing video:
+
+```
+can you create an edit of all the times this video says the word "fly trap"?
 ```
 
 ## Configuration
