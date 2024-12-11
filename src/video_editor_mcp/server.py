@@ -233,10 +233,13 @@ async def handle_call_tool(
             raise ValueError("Missing query")
 
         videos = vj.video_files.search(query)
+        logging.info(f"num videos are: {len(videos)}")
+        if videos:
+            logging.info(f"{videos[0]}")
         return [
             types.TextContent(
                 type="text",
-                text="Videos:\n" + "\n".join(f"- {video['video']['name']} at vj://video-file/{video['video_id']} \n - URL to view video: {video['video']['url']} \n - Scene changes in video: {video['scene_changes']} \n - Video    manuscript: {video['script']}" for video in videos),
+                text=f"Number of Videos Returned: {len(videos)} \n" + "\n".join(f"- Video Id: {video['video_id']}\n Video name: {video['video']['name']}\n - URL to view video: {video['video']['url']} \n - Scene changes in video: {video['scene_changes']} \n - Video manuscript: {video['script']}" for video in videos),
             )
         ]
     if name == "generate-edit-from-videos" and arguments:
@@ -267,7 +270,7 @@ async def handle_call_tool(
             "video_edit_version": "1.0",
             "video_output_format": "mp4",
             "video_output_resolution": resolution,
-            "video_output_fps": 30.0,
+            "video_output_fps": 60.0,
             "video_output_filename": "output_video.mp4",
             "audio_overlay": [], # TODO: add this back in 
             "video_series_sequential": updated_edit
@@ -334,7 +337,7 @@ async def handle_call_tool(
             "video_edit_version": "1.0",
             "video_output_format": "mp4",
             "video_output_resolution": resolution,
-            "video_output_fps": 30.0,
+            "video_output_fps": 60.0,
             "video_output_filename": "output_video.mp4",
             "audio_overlay": [], # TODO: add this back in 
             "video_series_sequential": updated_edit
