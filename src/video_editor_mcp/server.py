@@ -21,11 +21,21 @@ logging.basicConfig(
 )
 
 if not VJ_API_KEY:
+    try: 
+        with open(".env", "r") as f:
+            for line in f:
+                if "VJ_API_KEY" in line:
+                    VJ_API_KEY = line.split("=")[1]
+    except Exception as e:
+        raise Exception("VJ_API_KEY environment variable is required or a .env file with the key is required")
     raise Exception("VJ_API_KEY environment variable is required")
 
 vj = ApiClient(VJ_API_KEY)
 
 server = Server("video-jungle-mcp")
+
+videos_at_start = vj.video_files.list()
+counter = 10
 
 tools = ["add-video", "search-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
 
@@ -35,9 +45,11 @@ async def handle_list_resources() -> list[types.Resource]:
     List available video files.
     Each video files is available at a specific url
     """
-    videos = vj.video_files.list()
-    #projects = vj.projects.list()
-
+    global counter, videos_at_start
+    counter += 1
+    if counter % 10 == 0:
+        videos = vj.video_files.list()
+        videos_at_start = videos
     videos = [
         types.Resource(
             uri=AnyUrl(f"vj://video-file/{video.id}"),
@@ -45,7 +57,7 @@ async def handle_list_resources() -> list[types.Resource]:
             description=f"User provided description: {video.description}",
             mimeType="video/mp4",
         )
-        for video in videos
+        for video in videos_at_start
     ]
 
     '''
@@ -279,7 +291,8 @@ async def handle_call_tool(
         try: 
             proj = vj.projects.get(project)
         except Exception as e:
-            proj = vj.projects.create(name=project, description=f"Claude generated project")
+            logging.info(f"project not found, creating new project because {e}")
+            proj = vj.projects.create(name=project, description="Claude generated project")
             project = proj.id
             created = True
 
@@ -321,15 +334,18 @@ async def handle_call_tool(
         if not resolution:
             resolution = "1080x1920"
         
-        updated_edit = [{**cut, "video_id": video_id,
-                        "video_start_time": cut["start_time"],
-                        "video_end_time": cut["end_time"],
-                        "type": "videofile", 
-                        "audio_levels": [{
-                         "audio_level": "0.5",
-                         "start_time": cut["video_start_time"],
-                         "end_time": cut["video_end_time"],}]
-                         } for cut in edit]
+        try:
+            updated_edit = [{"video_id": video_id,
+                            "video_start_time": cut["video_start_time"],
+                            "video_end_time": cut["video_end_time"],
+                            "type": "videofile", 
+                            "audio_levels": [{
+                            "audio_level": "0.5",
+                            "start_time": cut["video_start_time"],
+                            "end_time": cut["video_end_time"],}]
+                            } for cut in edit]
+        except Exception as e:
+            raise ValueError(f"Error updating edit: {e}")
         
         logging.info(f"updated edit is: {updated_edit}")
 
