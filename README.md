@@ -183,5 +183,5 @@ logging.info("this is a test log")
 A reasonable way to follow along as you're workin on the project is to open a terminal session and do a:
 
 ```bash
-$ tail -f app.log
+$ tail -f 90 app.log
 ```
