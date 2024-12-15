@@ -94,10 +94,11 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 <details>
   <summary>Development/Unpublished Servers Configuration</summary>
-  ```
+  
+ ```json
   "mcpServers": {
     "video-editor-mcp": {
-      "command": "uv",
+      "command": "/Users/YOURDIRECTORY/.local/bin/uv",
       "args": [
         "--directory",
         "/Users/YOURDIRECTORY/video-editor-mcp",
@@ -108,11 +109,13 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
     }
   }
   ```
+
 </details>
 
 <details>
   <summary>Published Servers Configuration</summary>
-  ```
+  
+ ```json
   "mcpServers": {
     "video-editor-mcp": {
       "command": "uvx",
@@ -162,7 +165,7 @@ experience, we strongly recommend using the [MCP Inspector](https://github.com/m
 
 You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) with this command:
 
-(Be sure to replace YOURDIRECTORY and YOURAPIKEY with the directory this repo is in, and your Video Jungle API key, found in the settings page.)
+(Be sure to replace `YOURDIRECTORY` and `YOURAPIKEY` with the directory this repo is in, and your Video Jungle API key, found in the settings page.)
 
 ```bash
 npx @modelcontextprotocol/inspector uv --directory /Users/YOURDIRECTORY/video-editor-mcp run video-editor-mcp YOURAPIKEY
