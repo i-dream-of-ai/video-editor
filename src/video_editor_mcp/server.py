@@ -269,6 +269,12 @@ async def handle_call_tool(
         if not resolution:
             resolution = "1080x1920"
         
+        try:
+            w, h = resolution.split("x")
+            _ = f"{int(w)}x{int(w)}"
+        except Exception as e:
+            raise ValueError(f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}")
+        
         updated_edit = [{**cut, "type": "videofile", 
                         "audio_levels": [{
                          "audio_level": "0.5",
