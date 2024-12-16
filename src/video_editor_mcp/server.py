@@ -341,6 +341,12 @@ async def handle_call_tool(
             resolution = "1080x1920"
         
         try:
+            w, h = resolution.split("x")
+            _ = f"{int(w)}x{int(w)}"
+        except Exception as e:
+            raise ValueError(f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}")
+        
+        try:
             updated_edit = [{"video_id": video_id,
                             "video_start_time": cut["video_start_time"],
                             "video_end_time": cut["video_end_time"],
