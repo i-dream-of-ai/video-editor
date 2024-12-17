@@ -116,6 +116,7 @@ async def handle_list_prompts() -> list[types.Prompt]:
         )
     ]
 
+'''
 @server.get_prompt()
 async def handle_get_prompt(
     name: str, arguments: dict[str, str] | None
@@ -146,6 +147,7 @@ async def handle_get_prompt(
             )
         ],
     )
+'''
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
@@ -189,7 +191,7 @@ async def handle_list_tools() -> list[types.Tool]:
                                                        "video_start_time": "time",
                                                        "video_end_time": "time",}},
                 },
-                "required": ["edit", "project_id"],
+                "required": ["edit", "project_id", "cuts"],
             },
         ),
         types.Tool(
@@ -206,11 +208,35 @@ async def handle_list_tools() -> list[types.Tool]:
                                                        "video_end_time": "time",}
                                                        },
                 },
-                "required": ["edit", "project_id", "video_id"],
+                "required": ["edit", "project_id", "video_id", "cuts"],
             },
         ),
     ]
 
+def format_video_info(video):
+    try:
+        return (
+            f"- Video Id: {video.get('video_id', 'N/A')}\n"
+            f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
+            f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
+            f"  Video manuscript: {video.get('script', 'N/A')}"
+            f"  Generated description: {video.get('generated_descriptioon', 'N/A')}"
+        )
+    except Exception as e:
+        return f"Error formatting video: {str(e)}"
+
+def format_video_info_long(video):
+    try:
+        return (
+            f"- Video Id: {video.get('video_id', 'N/A')}\n"
+            f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
+            f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
+            f"  Video manuscript: {video.get('script', 'N/A')}"
+            f"  Video scenes: {video.get('scene_changes', 'N/A')}"
+        )
+    except Exception as e:
+        return f"Error formatting video: {str(e)}"
+    
 @server.call_tool()
 async def handle_call_tool(
     name: str, arguments: dict | None
@@ -246,20 +272,32 @@ async def handle_call_tool(
         ]
     if name == "search-videos" and arguments:
         query = arguments.get("query")
-
+        detailed_response = False
         if not query:
             raise ValueError("Missing query")
 
         videos = vj.video_files.search(query)
-        logging.info(f"num videos are: {len(videos)}")
+        #logging.info(f"num videos are: {len(videos)}")
         if videos:
             logging.info(f"{videos[0]}")
-        return [
+        if len(videos) == 1:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=format_video_info_long(videos[0]),
+                )
+            ]
+        # try to fit into context window
+        b = [
             types.TextContent(
                 type="text",
-                text=f"Number of Videos Returned: {len(videos)} \n" + "\n".join(f"- Video Id: {video['video_id']}\n Video name: {video['video']['name']}\n - URL to view video: {video['video']['url']} \n - Scene changes in video: {video['scene_changes']} \n - Video manuscript: {video['script']}" for video in videos),
+                text=(
+                    f"Number of Videos Returned: {len(videos)}\n\n"
+                    + "\n".join(format_video_info(video) for video in videos)
+                ),
             )
         ]
+        return b # type: ignore
     if name == "generate-edit-from-videos" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")
@@ -274,6 +312,11 @@ async def handle_call_tool(
             raise ValueError("Missing project")
         if not resolution:
             resolution = "1080x1920"
+        
+        if resolution == "1080p":
+            resolution = "1920x1080"
+        elif resolution == "720p":
+            resolution = "1280x720"
         
         try:
             w, h = resolution.split("x")
