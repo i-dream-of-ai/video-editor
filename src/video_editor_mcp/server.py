@@ -8,6 +8,7 @@ from pydantic import AnyUrl
 import mcp.server.stdio
 import sys
 import os
+import subprocess
 
 import logging
 
@@ -355,19 +356,31 @@ async def handle_call_tool(
 
         edit = vj.projects.render_edit(project, json_edit)
 
+        try:
+            os.chdir("./tools")
+            logging.info(f"in directory: {os.getcwd()}")
+            # don't block, because this might take a while
+            env_vars = {"VJ_API_KEY": VJ_API_KEY,
+                        'PATH': os.environ['PATH']}
+            logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
+            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"{project}.mp4", proj.name], 
+                             env=env_vars)
+        except Exception as e:
+            logging.info(f"Error running viewer: {e}")
+            
         if created:
             # we created a new project so let the user / LLM know
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} and created edit {edit['id']} with raw edit info: {updated_edit}"
+                    text=f"Created new project {proj.name} and created edit {edit} with raw edit info: {updated_edit}"
                 )
             ]
         
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in existing project {proj.name} with id: {edit['id']} and raw edit info: {updated_edit}",
+                text=f"Generated edit in existing project {proj.name} with generated asset info: {edit} and raw edit info: {updated_edit}",
             )
         ]
     if name == "generate-edit-from-single-video" and arguments:
@@ -430,20 +443,32 @@ async def handle_call_tool(
         logging.info(f"video edit is: {json_edit}")
 
         edit = vj.projects.render_edit(project, json_edit)
-
+        logging.info(f"edit is: {edit}")
+        try:
+            os.chdir("./tools")
+            logging.info(f"in directory: {os.getcwd()}")
+            # don't block, because this might take a while
+            env_vars = {"VJ_API_KEY": VJ_API_KEY,
+                        'PATH': os.environ['PATH']}
+            logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
+            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"{project}.mp4", proj.name], 
+                             env=env_vars)
+        except Exception as e:
+            logging.info(f"Error running viewer: {e}")
         if created:
             # we created a new project so let the user / LLM know
+            logging.info(f"created new project {proj.name} and created edit {edit}")
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} and created edit {edit['id']} with raw edit info: {updated_edit}"
+                    text=f"Created new project {proj.name} with raw edit info: {edit}"
                 )
             ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in project {proj.name} with id: {edit['id']} and raw edit info: {updated_edit}",
+                text=f"Generated edit in project {proj.name} with raw edit info: {edit}",
             )
         ]
 

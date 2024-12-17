@@ -1,6 +1,12 @@
 version = 1
 requires-python = ">=3.11"
 
+[manifest]
+members = [
+    "video-editor-mcp",
+    "viewer",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.7.0"
@@ -355,3 +361,8 @@ sdist = { url = "https://files.pythonhosted.org/packages/b0/c2/f8f399c5ac0cf5ae1
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/72/7d478b7a102b5cd80a745c35e708be33485eb2afb615e099e50342d6ed6d/videojungle-0.1.25-py3-none-any.whl", hash = "sha256:ea32a6fab9f9789b468066a693f7b6b907523d10b05bf39c99601e5dfebd05a2", size = 5700 },
 ]
+
+[[package]]
+name = "viewer"
+version = "0.1.0"
+source = { editable = "tools" }

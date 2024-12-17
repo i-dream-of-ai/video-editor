@@ -1,0 +1,18 @@
+[project]
+name = "viewer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[[project.authors]]
+name = "Kirk Kaiser"
+email = "kirk@zothcorp.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+viewer = "viewer.viewer:main"

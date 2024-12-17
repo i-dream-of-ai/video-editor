@@ -18,6 +18,9 @@ email = "kirk@zothcorp.com"
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
+[tool.uv.workspace]
+members = ["tools"]
+
 [project.scripts]
 video-editor-mcp = "video_editor_mcp:main"
 
