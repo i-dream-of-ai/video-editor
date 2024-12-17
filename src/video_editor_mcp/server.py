@@ -7,11 +7,17 @@ from mcp.server import NotificationOptions, Server
 from pydantic import AnyUrl
 import mcp.server.stdio
 import sys
+import os
 
 import logging
 
-VJ_API_KEY = sys.argv[1]
-
+if os.environ.get("VJ_API_KEY"):
+    VJ_API_KEY = os.environ.get("VJ_API_KEY")
+else:
+    try:
+        VJ_API_KEY = sys.argv[1]
+    except Exception:
+        VJ_API_KEY = None
 
 # Configure the logging
 logging.basicConfig(

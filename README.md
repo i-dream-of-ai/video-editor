@@ -93,27 +93,8 @@ On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
 <details>
-  <summary>Development/Unpublished Servers Configuration</summary>
-  
- ```json
-  "mcpServers": {
-    "video-editor-mcp": {
-      "command": "/Users/YOURDIRECTORY/.local/bin/uv",
-      "args": [
-        "--directory",
-        "/Users/YOURDIRECTORY/video-editor-mcp",
-        "run",
-        "video-editor-mcp",
-        "YOURAPIKEY"
-      ]
-    }
-  }
-  ```
-
-</details>
-
 <details>
-  <summary>Published Servers Configuration</summary>
+  <summary>Published Server Configuration</summary>
   
  ```json
   "mcpServers": {
@@ -126,6 +107,24 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
     }
   }
   ```
+</details>
+  <summary>Development/Unpublished Servers Configuration</summary>
+  
+ ```json
+  "mcpServers": {
+    "video-editor-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/YOURDIRECTORY/video-editor-mcp",
+        "run",
+        "video-editor-mcp",
+        "YOURAPIKEY"
+      ]
+    }
+  }
+  ```
+
 </details>
 
 Be sure to replace the directories with the directories you've placed the repository in on **your** computer.

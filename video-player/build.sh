@@ -1,0 +1,1 @@
+swiftc player.swift -o vj-player
