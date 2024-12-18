@@ -1,6 +1,6 @@
 # Video Editor MCP server
  
-Upload, edit, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
+Upload, edit, search, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
 You'll need to sign up for an account at [Video Jungle](https://app.video-jungle.com/register) in order to use this tool, and add your API key.
 
