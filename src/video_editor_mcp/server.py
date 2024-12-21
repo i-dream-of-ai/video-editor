@@ -363,7 +363,7 @@ async def handle_call_tool(
             env_vars = {"VJ_API_KEY": VJ_API_KEY,
                         'PATH': os.environ['PATH']}
             logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
-            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"{project}.mp4", proj.name], 
+            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"video-edit-{project}.mp4", proj.name], 
                              env=env_vars)
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
@@ -451,7 +451,7 @@ async def handle_call_tool(
             env_vars = {"VJ_API_KEY": VJ_API_KEY,
                         'PATH': os.environ['PATH']}
             logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
-            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"{project}.mp4", proj.name], 
+            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"video-edit-{project}.mp4", proj.name], 
                              env=env_vars)
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
