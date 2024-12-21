@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
  "mcp>=1.0.0",
+ "osxphotos>=0.69.2",
  "videojungle>=0.1.25",
 ]
 homepage = "https://github.com/burningion/video-editing-mcp"
