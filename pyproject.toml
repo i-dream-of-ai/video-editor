@@ -5,9 +5,14 @@ description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Edi
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+ "einops>=0.8.0",
  "mcp>=1.0.0",
  "osxphotos>=0.69.2",
+ "pillow>=11.0.0",
  "thefuzz>=0.22.1",
+ "timm>=1.0.12",
+ "torch>=2.5.1",
+ "transformers>=4.47.1",
  "videojungle>=0.1.25",
 ]
 homepage = "https://github.com/burningion/video-editing-mcp"
