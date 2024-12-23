@@ -5,11 +5,15 @@ from mcp.server.models import InitializationOptions
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
 from pydantic import AnyUrl
+from . search_local_videos import get_videos_by_keyword
+import threading
+import osxphotos
+
 import mcp.server.stdio
 import sys
 import os
 import subprocess
-
+from typing import Optional
 import logging
 
 if os.environ.get("VJ_API_KEY"):
@@ -39,12 +43,36 @@ if not VJ_API_KEY:
 
 vj = ApiClient(VJ_API_KEY)
 
+class PhotosDBLoader:
+    def __init__(self):
+        self._db: Optional[osxphotos.PhotosDB] = None
+        self.start_loading()
+    
+    def start_loading(self):
+        def load():
+            self._db = osxphotos.PhotosDB()
+            logging.info("PhotosDB loaded")
+                
+        thread = threading.Thread(target=load)
+        thread.daemon = True  # Make thread exit when main program exits
+        thread.start()
+    
+    @property
+    def db(self) -> osxphotos.PhotosDB:
+        if self._db is None:
+            raise Exception("PhotosDB still loading")
+        return self._db
+
+# Create global loader instance, (requires access to host computer!)
+if sys.platform == "darwin" and os.environ.get("LOAD_PHOTOS_DB"):
+    photos_loader = PhotosDBLoader()
+
 server = Server("video-jungle-mcp")
 
 videos_at_start = vj.video_files.list()
 counter = 10
 
-tools = ["add-video", "search-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
+tools = ["add-video", "search-local-videos", "search-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
@@ -181,6 +209,17 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="search-local-videos",
+            description="Search local videos in Photos app by keyword",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "keyword": {"type": "string"},
+                },
+                "required": ["keyword"],
+            },
+        ),
+        types.Tool(
             name="generate-edit-from-videos",
             description="Generate an edit from videos",
             inputSchema={
@@ -299,6 +338,29 @@ async def handle_call_tool(
             )
         ]
         return b # type: ignore
+    
+    if name == "search-local-videos" and arguments:
+        keyword = arguments.get("keyword")
+        if not keyword:
+            raise ValueError("Missing keyword")
+        try:
+            db = photos_loader.db
+            videos = get_videos_by_keyword(db, keyword)
+            return [
+            types.TextContent(
+                type="text",
+                text=(
+                    f"Number of Videos Returned: {len(videos)}\n\nShowing first 100:"
+                    + "\n".join(
+                        f"- {video}"
+                        for video in videos[:100]
+                    )
+                ),
+            )
+        ]
+        except Exception as e:
+            raise RuntimeError("Local Photos database not yet initialized")
+        
     if name == "generate-edit-from-videos" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")

@@ -55,6 +55,18 @@ can you search my videos for fly traps?
 
 Search results contain relevant metadata for generating a video edit according to details discovered in the initial analysis.
 
+**search-local-videos**
+
+You must set the environment variable `LOAD_PHOTOS_DB=1` in order to use this tool, as it will make Claude prompt to access your files on your local machine.
+
+Once that's done, you can search through your Photos app for videos that exist on your phone, using Apple's tags.
+
+In my case, when I search for "Skateboard", I get 1903 video files.
+
+```
+can you search my local video files for Skateboard?
+```
+
 **generate-edit-from-videos**
 
 Finally, you can use these search results to generate an edit:
@@ -81,6 +93,11 @@ You must login to [Video Jungle settings](https://app.video-jungle.com/profile/s
 $ uv run video-editor-mcp YOURAPIKEY
 ```
 
+To allow this MCP server to search your Photos app on MacOS:
+
+```
+$ LOAD_PHOTOS_DB=1 uv run video-editor-mcp YOURAPIKEY
+```
 ## Quickstart
 
 ### Install
@@ -167,7 +184,7 @@ You can launch the MCP Inspector via [`npm`](https://docs.npmjs.com/downloading-
 (Be sure to replace `YOURDIRECTORY` and `YOURAPIKEY` with the directory this repo is in, and your Video Jungle API key, found in the settings page.)
 
 ```bash
-npx @modelcontextprotocol/inspector uv --directory /Users/YOURDIRECTORY/video-editor-mcp run video-editor-mcp YOURAPIKEY
+npx @modelcontextprotocol/inspector uv run --directory /Users/YOURDIRECTORY/video-editor-mcp video-editor-mcp YOURAPIKEY
 ```
 
 
