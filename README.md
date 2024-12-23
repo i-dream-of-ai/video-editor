@@ -142,6 +142,24 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
   ```
 
+  With local Photos app access enabled (search your Photos app):
+
+  ```json
+    "video-jungle-mcp": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/<PATH_TO>/video-jungle-mcp",
+        "run",
+        "video-editor-mcp",
+        "<YOURAPIKEY>"
+      ],
+     "env": {
+	      "LOAD_PHOTOS_DB": "1"
+      }
+    },
+  ```
+
 </details>
 
 Be sure to replace the directories with the directories you've placed the repository in on **your** computer.

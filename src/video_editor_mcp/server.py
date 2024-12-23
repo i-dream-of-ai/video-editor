@@ -340,6 +340,9 @@ async def handle_call_tool(
         return b # type: ignore
     
     if name == "search-local-videos" and arguments:
+        if not os.environ.get("LOAD_PHOTOS_DB"):
+            raise ValueError("You must set the LOAD_PHOTOS_DB environment variable to True to use this tool")
+        
         keyword = arguments.get("keyword")
         if not keyword:
             raise ValueError("Missing keyword")
