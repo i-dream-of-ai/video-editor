@@ -72,7 +72,7 @@ server = Server("video-jungle-mcp")
 videos_at_start = vj.video_files.list()
 counter = 10
 
-tools = ["add-video", "search-local-videos", "search-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
+tools = ["add-video", "search-local-videos", "search-remote-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
@@ -197,8 +197,8 @@ async def handle_list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
-            name="search-videos",
-            description="Search videos by query",
+            name="search-remote-videos",
+            description="Search remote videos hosted on Video Jungle by query",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -309,7 +309,7 @@ async def handle_call_tool(
                 text=f"Added video '{name}' with url: {url}",
             )
         ]
-    if name == "search-videos" and arguments:
+    if name == "search-remote-videos" and arguments:
         query = arguments.get("query")
         detailed_response = False
         if not query:
