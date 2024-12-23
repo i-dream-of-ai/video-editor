@@ -133,19 +133,19 @@ async def handle_list_prompts() -> list[types.Prompt]:
     """
     return [
         types.Prompt(
-            name="summarize-notes",
-            description="Creates a summary of all notes",
+            name="generate-local-search",
+            description="Generate a local search for videos using appropriate label names from the Photos app.",
             arguments=[
                 types.PromptArgument(
-                    name="style",
-                    description="Style of the summary (brief/detailed)",
+                    name="search_query",
+                    description="Natural language query to be translated into Photos app label names.",
                     required=False,
                 )
             ],
         )
     ]
 
-'''
+
 @server.get_prompt()
 async def handle_get_prompt(
     name: str, arguments: dict[str, str] | None
@@ -154,29 +154,28 @@ async def handle_get_prompt(
     Generate a prompt by combining arguments with server state.
     The prompt includes all current notes and can be customized via arguments.
     """
-    if name != "summarize-notes":
+    if name != "generate-local-search":
         raise ValueError(f"Unknown prompt: {name}")
 
-    style = (arguments or {}).get("style", "brief")
-    detail_prompt = " Give extensive details." if style == "detailed" else ""
+    if not arguments:
+        raise ValueError("Missing arguments")
+    
+    search_query = arguments.get("search_query")
+    if not search_query:
+        raise ValueError("Missing search_query")
 
     return types.GetPromptResult(
-        description="Summarize the current notes",
+        description="Generate a local search for videos using appropriate label names from the Photos app.",
         messages=[
             types.PromptMessage(
                 role="user",
                 content=types.TextContent(
                     type="text",
-                    text=f"Here are the current notes to summarize:{detail_prompt}\n\n"
-                    + "\n".join(
-                        f"- {name}: {content}"
-                        for name, content in notes.items()
-                    ),
-                ),
+                    text=f"Here are the exact label names you need to match in your query:\n\n For the specific query: {search_query}, you should use the following labels: {photos_loader.db.labels_as_dict} for the search-local-videos tool"
+                    )
             )
-        ],
-    )
-'''
+        ])
+
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
