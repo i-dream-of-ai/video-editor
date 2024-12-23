@@ -3,7 +3,7 @@ import sys
 
 def get_videos_by_keyword(photosdb, keyword):
     # Use only_movies=True instead of is_video=True
-    videos = photosdb.query(osxphotos.QueryOptions(label=[keyword], photos=False, movies=True, incloud=True))
+    videos = photosdb.query(osxphotos.QueryOptions(label=[keyword], photos=False, movies=True, incloud=True, ignore_case=True))
     
     # Convert to list of dictionaries if needed
     video_data = [video.asdict() for video in videos]
@@ -12,7 +12,7 @@ def get_videos_by_keyword(photosdb, keyword):
 
 def find_and_export_videos(photosdb,keyword, export_path):
     
-    videos = photosdb.query(osxphotos.QueryOptions(label=[keyword], photos=False, movies=True, incloud=True))
+    videos = photosdb.query(osxphotos.QueryOptions(label=[keyword], photos=False, movies=True, incloud=True, ignore_case=True))
     
     exported_files = []
     for video in videos:
