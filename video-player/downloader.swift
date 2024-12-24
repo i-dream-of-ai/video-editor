@@ -24,8 +24,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem.button {
-            let svgPath = "./Icon.svg"
-            if let svgData = try? Data(contentsOf: URL(fileURLWithPath: svgPath)),
+            // Try bundle path first
+            let bundlePath = Bundle.main.path(forResource: "Icon", ofType: "svg")
+            // Fall back to local path if bundle path fails
+            let localPath = "./Icon.svg"
+            
+            let finalPath = bundlePath ?? localPath
+            
+            if let svgData = try? Data(contentsOf: URL(fileURLWithPath: finalPath)),
             let svgImage = NSImage(data: svgData) {
                 button.image = svgImage
                 button.image?.isTemplate = true
