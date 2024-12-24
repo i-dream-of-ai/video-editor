@@ -11,6 +11,7 @@ ICONSET_NAME="AppIcon.iconset"
 # Create bundle structure
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp Icon.svg "$RESOURCES_DIR/"
+cp config.json "$RESOURCES_DIR/"
 
 # Compile the application
 swiftc downloader.swift -o "$MACOS_DIR/$APP_NAME"

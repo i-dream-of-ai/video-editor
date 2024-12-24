@@ -9,6 +9,6 @@ wheels/
 # Virtual environments
 .venv
 app.log
-
-# Generated / Downloaded Videos
+# Generated / Downloaded V  ideos
 *.mp4
+config.json

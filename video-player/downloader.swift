@@ -1,4 +1,109 @@
+import AppKit
 import Cocoa
+import Foundation
+
+class Config {
+    static func getAPIKey() -> String? {
+        if let configPath = Bundle.main.path(forResource: "config", ofType: "json"),
+           let configData = try? Data(contentsOf: URL(fileURLWithPath: configPath)),
+           let json = try? JSONSerialization.jsonObject(with: configData) as? [String: String] {
+            return json["api_key"]
+        }
+        return nil
+    }
+}
+
+struct VideoUpload: Codable {
+    let name: String
+    let filename: String
+    let upload_method: String
+}
+
+enum UploadError: Error {
+    case invalidURL
+    case networkError(Error)
+    case invalidResponse
+    case serverError(Int)
+    case noData
+}
+
+class VideoUploader {
+    private let apiKey: String
+    private let baseURL = "https://api.video-jungle.com/video-file"
+    
+    init(apiKey: String) {
+        self.apiKey = apiKey
+    }
+    
+    func uploadVideo(name: String, youtubeURL: String) async throws -> Data {
+        guard let url = URL(string: baseURL) else {
+            throw UploadError.invalidURL
+        }
+        
+        // Prepare the upload data
+        let uploadData = VideoUpload(
+            name: name,
+            filename: youtubeURL,
+            upload_method: "url"
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        // Encode the JSON data
+        request.httpBody = try JSONEncoder().encode(uploadData)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw UploadError.invalidResponse
+            }
+            
+            switch httpResponse.statusCode {
+            case 200...299:
+                return data
+            default:
+                throw UploadError.serverError(httpResponse.statusCode)
+            }
+        } catch let error as UploadError {
+            throw error
+        } catch {
+            throw UploadError.networkError(error)
+        }
+    }
+}
+
+class CustomTextField: NSTextField {
+    
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command) {
+            switch event.charactersIgnoringModifiers {
+            case "v":
+                if NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: self) {
+                    return true
+                }
+            case "c":
+                if NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: self) {
+                    return true
+                }
+            case "x":
+                if NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: self) {
+                    return true
+                }
+            case "a":
+                if NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: self) {
+                    return true
+                }
+            default:
+                break
+            }
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
 
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusItem: NSStatusItem!
@@ -83,19 +188,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 }
 
-class UploaderViewController: NSViewController {
-    private let uploadManager = UploadManager()
-    
+class UploaderViewController: NSViewController, NSTextFieldDelegate {
+    private let uploadManager: UploadManager = {
+        guard let apiKey = Config.getAPIKey() else {
+            fatalError("API key not found in config.json")
+        }
+        return UploadManager(apiKey: apiKey)
+    }()
+
     override func loadView() {
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
-        
+
         // URL Input Field
-        let urlField = NSTextField(frame: NSRect(x: 20, y: 250, width: 360, height: 24))
+        let urlField = CustomTextField(frame: NSRect(x: 20, y: 250, width: 360, height: 24))
         urlField.placeholderString = "Enter URL to upload"
         urlField.target = self
         urlField.action = #selector(handleURLInput(_:))
-        container.addSubview(urlField)
+        urlField.isEditable = true
+        urlField.isSelectable = true
+        urlField.usesSingleLineMode = true
         
+        container.addSubview(urlField)
+        container.addSubview(urlField)
+
         // Drop Zone
         let dropZone = DropZoneView(frame: NSRect(x: 20, y: 50, width: 360, height: 180))
         dropZone.uploadManager = uploadManager
@@ -137,6 +252,14 @@ class UploaderViewController: NSViewController {
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.runModal()
+    }
+    // MARK: - NSTextDelegate Methods
+    func textDidChange(_ notification: Notification) {
+        // Handle text changes if needed
+    }
+    
+    func textDidEndEditing(_ notification: Notification) {
+        // Handle when editing ends if needed
     }
 }
 
@@ -255,6 +378,13 @@ class DropZoneView: NSView {
 }
 
 class UploadManager {
+    private let apiKey: String
+    private let baseURL = "https://api.video-jungle.com/video-file"
+
+    init(apiKey: String = "") { // Replace with your actual API key
+        self.apiKey = apiKey
+    }
+
     func uploadFile(_ fileURL: URL, completion: @escaping (Result<Void, Error>) -> Void) {
         // Implement your file upload logic here
         // This is a placeholder implementation
