@@ -9,11 +9,14 @@ from . search_local_videos import get_videos_by_keyword
 import threading
 import osxphotos
 
+from transformers import AutoModel
+
 import mcp.server.stdio
 import sys
 import os
 import subprocess
-from typing import Optional
+import requests
+from typing import Optional, List, Union
 import logging
 
 if os.environ.get("VJ_API_KEY"):
@@ -52,7 +55,7 @@ class PhotosDBLoader:
         def load():
             self._db = osxphotos.PhotosDB()
             logging.info("PhotosDB loaded")
-                
+        
         thread = threading.Thread(target=load)
         thread.daemon = True  # Make thread exit when main program exits
         thread.start()
@@ -62,10 +65,81 @@ class PhotosDBLoader:
         if self._db is None:
             raise Exception("PhotosDB still loading")
         return self._db
+ 
+class EmbeddingModelLoader:
+    def __init__(self, model_name: str = 'jinaai/jina-clip-v1'):
+        self._model: Optional[AutoModel] = None
+        self.model_name = model_name
+        self.start_loading()
+    
+    def start_loading(self):
+        def load():
+            self._model = AutoModel.from_pretrained(
+                self.model_name, 
+                trust_remote_code=True
+            )
+            logging.info(f"Model {self.model_name} loaded")
+        
+        thread = threading.Thread(target=load)
+        thread.daemon = True
+        thread.start()
+    
+    @property
+    def model(self) -> AutoModel:
+        if self._model is None:
+            raise Exception(f"Model {self.model_name} still loading")
+        return self._model
+    
+    def encode_text(self, texts: Union[str, List[str]], truncate_dim: Optional[int] = None, task: Optional[str] = None) -> dict:
+        """
+        Encode text and format the embeddings in the expected JSON structure
+        """
+        embeddings = self.model.encode_text(
+            texts,
+            truncate_dim=truncate_dim,
+            task=task
+        )
+        
+        # Format the response in the expected structure
+        return {
+            "embeddings": embeddings.tolist(),
+            "embedding_type": "text_embeddings"
+        }
+    
+    def encode_image(self, images: Union[str, List[str]], truncate_dim: Optional[int] = None) -> dict:
+        """
+        Encode images and format the embeddings in the expected JSON structure
+        """
+        embeddings = self.model.encode_image(
+            images,
+            truncate_dim=truncate_dim
+        )
+        
+        return {
+            "embeddings": embeddings.tolist(),
+            "embedding_type": "image_embeddings"
+        }
+    
+    def post_embeddings(self, embeddings: dict, endpoint_url: str, headers: Optional[dict] = None) -> requests.Response:
+        """
+        Post embeddings to the specified endpoint
+        """
+        if headers is None:
+            headers = {'Content-Type': 'application/json'}
+        
+        response = requests.post(
+            endpoint_url,
+            json=embeddings,
+            headers=headers
+        )
+        response.raise_for_status()
+        return response
 
 # Create global loader instance, (requires access to host computer!)
 if sys.platform == "darwin" and os.environ.get("LOAD_PHOTOS_DB"):
     photos_loader = PhotosDBLoader()
+
+#model_loader = EmbeddingModelLoader()
 
 server = Server("video-jungle-mcp")
 
@@ -314,17 +388,35 @@ async def handle_call_tool(
         detailed_response = False
         if not query:
             raise ValueError("Missing query")
+        ''' 
+        embeddings = model_loader.encode_text(query)
+        logging.info(f"Embeddings are:  {embeddings}")
 
+        response = model_loader.post_embeddings(
+                    embeddings,
+                    'https://api.video-jungle.com/video-file/embedding-search',
+                    headers={
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': VJ_API_KEY
+                    })
+
+        logging.info(f"Response is: {response.json()}")
+        if response.status_code != 200:
+            raise RuntimeError(f"Error searching for videos: {response.text}")
+        else:
+            videos = response.json()
+        '''   
         videos = vj.video_files.search(query)
-        #logging.info(f"num videos are: {len(videos)}")
+        logging.info(f"num videos are: {len(videos)}")
         if videos:
             logging.info(f"{videos[0]}")
-        if len(videos) == 1:
+        if len(videos) <= 3:
             return [
                 types.TextContent(
                     type="text",
-                    text=format_video_info_long(videos[0]),
+                    text=format_video_info_long(video),
                 )
+                for video in videos
             ]
         # try to fit into context window
         b = [
