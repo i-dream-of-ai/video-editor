@@ -139,7 +139,7 @@ class EmbeddingModelLoader:
 if sys.platform == "darwin" and os.environ.get("LOAD_PHOTOS_DB"):
     photos_loader = PhotosDBLoader()
 
-#model_loader = EmbeddingModelLoader()
+model_loader = EmbeddingModelLoader()
 
 server = Server("video-jungle-mcp")
 
@@ -326,6 +326,27 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
     ]
 
+def format_single_video(video):
+    """
+    Format a single video metadata tuple (metadata_dict, confidence_score)
+    Returns a formatted string and a Python code string representation
+    """
+    try: 
+        # Create human-readable format
+        readable_format = f"""
+            Video Embedding Result:
+            -------------
+            Video ID: {video['video_id']}
+            Description: {video['description']}
+            Timestamp: {video['timepoint']}
+            Detected Items: {', '.join(video['detected_items']) if video['detected_items'] else 'None'}
+        """
+    except Exception as e:
+        raise ValueError(f"Error formatting video: {str(e)}")
+    
+    return readable_format
+
+
 def format_video_info(video):
     try:
         return (
@@ -388,7 +409,7 @@ async def handle_call_tool(
         detailed_response = False
         if not query:
             raise ValueError("Missing query")
-        ''' 
+        
         embeddings = model_loader.encode_text(query)
         logging.info(f"Embeddings are:  {embeddings}")
 
@@ -405,8 +426,8 @@ async def handle_call_tool(
             raise RuntimeError(f"Error searching for videos: {response.text}")
         else:
             videos = response.json()
-        '''   
-        videos = vj.video_files.search(query)
+        embedding_search_response = [format_single_video(video) for video in videos]
+        videos = vj.video_files.search(query) 
         logging.info(f"num videos are: {len(videos)}")
         if videos:
             logging.info(f"{videos[0]}")
@@ -423,7 +444,9 @@ async def handle_call_tool(
             types.TextContent(
                 type="text",
                 text=(
-                    f"Number of Videos Returned: {len(videos)}\n\n"
+                    f"Number of embedding search results: {len(embedding_search_response)}\n\n"
+                    + "\n".join(embedding_search_response)
+                    + f"Number of Videos Returned: {len(videos)}\n\n"
                     + "\n".join(format_video_info(video) for video in videos)
                 ),
             )
