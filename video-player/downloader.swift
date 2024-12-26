@@ -27,54 +27,7 @@ enum UploadError: Error {
     case noData
 }
 
-class VideoUploader {
-    private let apiKey: String
-    private let baseURL = "https://api.video-jungle.com/video-file"
-    
-    init(apiKey: String) {
-        self.apiKey = apiKey
-    }
-    
-    func uploadVideo(name: String, youtubeURL: String) async throws -> Data {
-        guard let url = URL(string: baseURL) else {
-            throw UploadError.invalidURL
-        }
-        
-        // Prepare the upload data
-        let uploadData = VideoUpload(
-            name: name,
-            filename: youtubeURL,
-            upload_method: "url"
-        )
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
-        
-        // Encode the JSON data
-        request.httpBody = try JSONEncoder().encode(uploadData)
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw UploadError.invalidResponse
-            }
-            
-            switch httpResponse.statusCode {
-            case 200...299:
-                return data
-            default:
-                throw UploadError.serverError(httpResponse.statusCode)
-            }
-        } catch let error as UploadError {
-            throw error
-        } catch {
-            throw UploadError.networkError(error)
-        }
-    }
-}
+
 
 class CustomTextField: NSTextField {
     
@@ -108,8 +61,14 @@ class CustomTextField: NSTextField {
 class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var statusItem: NSStatusItem!
     var uploadWindow: NSWindow?
-    let uploadManager = UploadManager()
-    
+    // Use lazy property initialization for uploadManager
+    lazy var uploadManager: UploadManager = {
+        guard let apiKey = Config.getAPIKey() else {
+            fatalError("API key not found in config.json")
+        }
+        return UploadManager(apiKey: apiKey)
+    }()
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         // Register for Apple Events
@@ -189,6 +148,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 }
 
 class UploaderViewController: NSViewController, NSTextFieldDelegate {
+    private var nameField: NSTextField!
+    private var urlField: NSTextField!
+    private var statusLabel: NSTextField!
+    private var uploadButton: NSButton!
+
     private let uploadManager: UploadManager = {
         guard let apiKey = Config.getAPIKey() else {
             fatalError("API key not found in config.json")
@@ -199,25 +163,41 @@ class UploaderViewController: NSViewController, NSTextFieldDelegate {
     override func loadView() {
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
 
-        // URL Input Field
-        let urlField = CustomTextField(frame: NSRect(x: 20, y: 250, width: 360, height: 24))
+        // Name Input Field - Positioned at top
+        nameField = CustomTextField(frame: NSRect(x: 20, y: 250, width: 360, height: 24))
+        nameField.placeholderString = "Name"
+        nameField.target = self
+        nameField.action = #selector(handleNameInput(_:))
+        nameField.isEditable = true
+        nameField.isSelectable = true
+        nameField.usesSingleLineMode = true
+        container.addSubview(nameField)
+
+        // URL Input Field - Positioned below name field
+        urlField = CustomTextField(frame: NSRect(x: 20, y: 215, width: 270, height: 24))
         urlField.placeholderString = "Enter URL to upload"
         urlField.target = self
         urlField.action = #selector(handleURLInput(_:))
         urlField.isEditable = true
         urlField.isSelectable = true
         urlField.usesSingleLineMode = true
-        
-        container.addSubview(urlField)
         container.addSubview(urlField)
 
-        // Drop Zone
-        let dropZone = DropZoneView(frame: NSRect(x: 20, y: 50, width: 360, height: 180))
+        // Upload Button - Aligned with URL field
+        uploadButton = NSButton(frame: NSRect(x: 300, y: 215, width: 80, height: 24))
+        uploadButton.title = "Upload"
+        uploadButton.bezelStyle = .rounded
+        uploadButton.target = self
+        uploadButton.action = #selector(handleUpload(_:))
+        container.addSubview(uploadButton)
+
+        // Drop Zone - Below URL field and button
+        let dropZone = DropZoneView(frame: NSRect(x: 20, y: 50, width: 360, height: 150))
         dropZone.uploadManager = uploadManager
         container.addSubview(dropZone)
         
-        // Status Label
-        let statusLabel = NSTextField(frame: NSRect(x: 20, y: 20, width: 360, height: 24))
+        // Status Label - At bottom
+        statusLabel = NSTextField(frame: NSRect(x: 20, y: 20, width: 360, height: 24))
         statusLabel.isEditable = false
         statusLabel.isBezeled = false
         statusLabel.drawsBackground = false
@@ -227,25 +207,76 @@ class UploaderViewController: NSViewController, NSTextFieldDelegate {
         self.view = container
     }
     
+    @objc private func handleNameInput(_ sender: NSTextField) {
+        // Update status or validate name as needed
+        statusLabel.stringValue = "Name entered: \(sender.stringValue)"
+    }
+
     @objc func handleURLInput(_ sender: NSTextField) {
-        guard let urlString = sender.stringValue.nilIfEmpty,
-              let url = URL(string: urlString) else {
-            showAlert(message: "Invalid URL")
-            return
+        Task {
+            await handleUploadAttempt()
         }
-        
-        uploadManager.uploadURL(url) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    self.showAlert(message: "URL uploaded successfully")
-                case .failure(let error):
-                    self.showAlert(message: "Upload failed: \(error.localizedDescription)")
-                }
-            }
+    }
+
+    @objc private func handleUpload(_ sender: NSButton) {
+        Task {
+            await handleUploadAttempt()
         }
     }
     
+    private func handleUploadAttempt() async {
+        // Validate inputs
+        guard let name = nameField.stringValue.nilIfEmpty else {
+            showAlert(message: "Please enter a name")
+            return
+        }
+        
+        guard let urlString = urlField.stringValue.nilIfEmpty,
+              let url = URL(string: urlString) else {
+            showAlert(message: "Please enter a valid URL")
+            return
+        }
+        
+        await MainActor.run {
+            statusLabel.stringValue = "Uploading..."
+            uploadButton.isEnabled = false
+        }
+        
+        // Convert completion handler to async/await
+        do {
+            await MainActor.run {
+                statusLabel.stringValue = "Uploading..."
+                uploadButton.isEnabled = false
+            }
+            
+            let _ = try await uploadManager.uploadURL(name: name, urlString: urlString)
+            
+            await MainActor.run {
+                statusLabel.stringValue = "Upload completed successfully!"
+                showAlert(message: "Video uploaded successfully")
+                // Clear the fields after successful upload
+                nameField.stringValue = ""
+                urlField.stringValue = ""
+                uploadButton.isEnabled = true
+            }
+            
+            await MainActor.run {
+                statusLabel.stringValue = "Upload completed successfully!"
+                showAlert(message: "Video uploaded successfully")
+                // Clear the fields after successful upload
+                nameField.stringValue = ""
+                urlField.stringValue = ""
+                uploadButton.isEnabled = true
+            }
+        } catch {
+            await MainActor.run {
+                statusLabel.stringValue = "Upload failed"
+                showAlert(message: "Upload failed: \(error.localizedDescription)")
+                uploadButton.isEnabled = true
+            }
+        }
+    }
+
     func showAlert(message: String) {
         let alert = NSAlert()
         alert.messageText = message
@@ -253,6 +284,7 @@ class UploaderViewController: NSViewController, NSTextFieldDelegate {
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
+    
     // MARK: - NSTextDelegate Methods
     func textDidChange(_ notification: Notification) {
         // Handle text changes if needed
@@ -380,11 +412,50 @@ class DropZoneView: NSView {
 class UploadManager {
     private let apiKey: String
     private let baseURL = "https://api.video-jungle.com/video-file"
-
-    init(apiKey: String = "") { // Replace with your actual API key
+    
+    init(apiKey: String) {
         self.apiKey = apiKey
     }
-
+    
+    func uploadURL(name: String, urlString: String) async throws -> Data {
+        guard let url = URL(string: baseURL) else {
+            throw UploadError.invalidURL
+        }
+        
+        // Prepare the upload data
+        let uploadData = VideoUpload(
+            name: name,
+            filename: urlString,
+            upload_method: "url"
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        
+        // Encode the JSON data
+        request.httpBody = try JSONEncoder().encode(uploadData)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw UploadError.invalidResponse
+            }
+            
+            switch httpResponse.statusCode {
+            case 200...299:
+                return data
+            default:
+                throw UploadError.serverError(httpResponse.statusCode)
+            }
+        } catch let error as UploadError {
+            throw error
+        } catch {
+            throw UploadError.networkError(error)
+        }
+    }
     func uploadFile(_ fileURL: URL, completion: @escaping (Result<Void, Error>) -> Void) {
         // Implement your file upload logic here
         // This is a placeholder implementation
@@ -395,15 +466,6 @@ class UploadManager {
         }
     }
     
-    func uploadURL(_ url: URL, completion: @escaping (Result<Void, Error>) -> Void) {
-        // Implement your URL upload logic here
-        // This is a placeholder implementation
-        DispatchQueue.global().async {
-            // Simulating network delay
-            Thread.sleep(forTimeInterval: 1.0)
-            completion(.success(()))
-        }
-    }
 }
 
 extension String {
