@@ -349,11 +349,18 @@ def format_single_video(video):
 
 def format_video_info(video):
     try:
+        if video.get("script") is not None:
+            if len(video.get("script")) > 200:
+                script = video.get("script")[:200] + "..."
+            else:
+                script = video.get("script")
+        else:
+            script = "N/A"
         return (
             f"- Video Id: {video.get('video_id', 'N/A')}\n"
             f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
-            f"  Video manuscript: {video.get('script', 'N/A')}"
+            f"  Video manuscript: {script}"
             f"  Generated description: {video.get('generated_descriptioon', 'N/A')}"
         )
     except Exception as e:
@@ -361,11 +368,19 @@ def format_video_info(video):
 
 def format_video_info_long(video):
     try:
+        if video.get("script") is not None:
+            if len(video.get("script")) > 200:
+                script = video.get("script")[:200] + "..."
+            else:
+                script = video.get("script")
+        else:
+            script = "N/A"
+
         return (
             f"- Video Id: {video.get('video_id', 'N/A')}\n"
             f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
-            f"  Video manuscript: {video.get('script', 'N/A')}"
+            f"  Video manuscript: {script}"
             f"  Video scenes: {video.get('scene_changes', 'N/A')}"
         )
     except Exception as e:
@@ -406,7 +421,7 @@ async def handle_call_tool(
         ]
     if name == "search-remote-videos" and arguments:
         query = arguments.get("query")
-        detailed_response = False
+
         if not query:
             raise ValueError("Missing query")
         

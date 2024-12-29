@@ -28,6 +28,11 @@ build-backend = "hatchling.build"
 [tool.uv.workspace]
 members = ["tools"]
 
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
+
 [project.scripts]
 video-editor-mcp = "video_editor_mcp:main"
 
