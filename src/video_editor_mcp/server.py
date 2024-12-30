@@ -160,6 +160,7 @@ async def handle_list_resources() -> list[types.Resource]:
     if counter % 10 == 0:
         videos = vj.video_files.list()
         videos_at_start = videos
+        counter = 0
     videos = [
         types.Resource(
             uri=AnyUrl(f"vj://video-file/{video.id}"),
@@ -197,6 +198,7 @@ async def handle_read_resource(uri: AnyUrl) -> str:
     if id is not None:
         id = id.lstrip("/video-file/")
         video = vj.video_files.get(id)
+        logging.info(f"video is: {video}")
         return video.model_dump_json()
     raise ValueError(f"Video not found: {id}")
 
