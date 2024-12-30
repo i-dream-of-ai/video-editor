@@ -32,6 +32,7 @@ members = ["tools"]
 dev = [
     "ipykernel>=6.29.5",
     "pre-commit>=4.0.1",
+    "ruff>=0.8.4",
 ]
 
 [project.scripts]

@@ -1,15 +1,15 @@
-import os
-import sys
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 
 from videojungle import ApiClient
 
 # Configure the logging
 logging.basicConfig(
-    filename='app.log',           # Name of the log file
-    level=logging.INFO,           # Log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+    filename="app.log",  # Name of the log file
+    level=logging.INFO,  # Log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
 )
 
 if os.environ.get("VJ_API_KEY"):

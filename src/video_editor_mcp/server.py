@@ -1,23 +1,21 @@
-import asyncio
-
-from videojungle import ApiClient
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-from pydantic import AnyUrl
-from . search_local_videos import get_videos_by_keyword
-import threading
-import osxphotos
-
-from transformers import AutoModel
-
-import mcp.server.stdio
-import sys
+import logging
 import os
 import subprocess
+import sys
+import threading
+from typing import List, Optional, Union
+
+import mcp.server.stdio
+import mcp.types as types
+import osxphotos
 import requests
-from typing import Optional, List, Union
-import logging
+from mcp.server import NotificationOptions, Server
+from mcp.server.models import InitializationOptions
+from pydantic import AnyUrl
+from transformers import AutoModel
+from videojungle import ApiClient
+
+from .search_local_videos import get_videos_by_keyword
 
 if os.environ.get("VJ_API_KEY"):
     VJ_API_KEY = os.environ.get("VJ_API_KEY")
@@ -29,111 +27,107 @@ else:
 
 # Configure the logging
 logging.basicConfig(
-    filename='app.log',           # Name of the log file
-    level=logging.INFO,           # Log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Log format
+    filename="app.log",  # Name of the log file
+    level=logging.INFO,  # Log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Log format
 )
 
 if not VJ_API_KEY:
-    try: 
+    try:
         with open(".env", "r") as f:
             for line in f:
                 if "VJ_API_KEY" in line:
                     VJ_API_KEY = line.split("=")[1]
-    except Exception as e:
-        raise Exception("VJ_API_KEY environment variable is required or a .env file with the key is required")
+    except Exception:
+        raise Exception(
+            "VJ_API_KEY environment variable is required or a .env file with the key is required"
+        )
     raise Exception("VJ_API_KEY environment variable is required")
 
 vj = ApiClient(VJ_API_KEY)
+
 
 class PhotosDBLoader:
     def __init__(self):
         self._db: Optional[osxphotos.PhotosDB] = None
         self.start_loading()
-    
+
     def start_loading(self):
         def load():
             self._db = osxphotos.PhotosDB()
             logging.info("PhotosDB loaded")
-        
+
         thread = threading.Thread(target=load)
         thread.daemon = True  # Make thread exit when main program exits
         thread.start()
-    
+
     @property
     def db(self) -> osxphotos.PhotosDB:
         if self._db is None:
             raise Exception("PhotosDB still loading")
         return self._db
- 
+
+
 class EmbeddingModelLoader:
-    def __init__(self, model_name: str = 'jinaai/jina-clip-v1'):
+    def __init__(self, model_name: str = "jinaai/jina-clip-v1"):
         self._model: Optional[AutoModel] = None
         self.model_name = model_name
         self.start_loading()
-    
+
     def start_loading(self):
         def load():
             self._model = AutoModel.from_pretrained(
-                self.model_name, 
-                trust_remote_code=True
+                self.model_name, trust_remote_code=True
             )
             logging.info(f"Model {self.model_name} loaded")
-        
+
         thread = threading.Thread(target=load)
         thread.daemon = True
         thread.start()
-    
+
     @property
     def model(self) -> AutoModel:
         if self._model is None:
             raise Exception(f"Model {self.model_name} still loading")
         return self._model
-    
-    def encode_text(self, texts: Union[str, List[str]], truncate_dim: Optional[int] = None, task: Optional[str] = None) -> dict:
+
+    def encode_text(
+        self,
+        texts: Union[str, List[str]],
+        truncate_dim: Optional[int] = None,
+        task: Optional[str] = None,
+    ) -> dict:
         """
         Encode text and format the embeddings in the expected JSON structure
         """
-        embeddings = self.model.encode_text(
-            texts,
-            truncate_dim=truncate_dim,
-            task=task
-        )
-        
+        embeddings = self.model.encode_text(texts, truncate_dim=truncate_dim, task=task)
+
         # Format the response in the expected structure
-        return {
-            "embeddings": embeddings.tolist(),
-            "embedding_type": "text_embeddings"
-        }
-    
-    def encode_image(self, images: Union[str, List[str]], truncate_dim: Optional[int] = None) -> dict:
+        return {"embeddings": embeddings.tolist(), "embedding_type": "text_embeddings"}
+
+    def encode_image(
+        self, images: Union[str, List[str]], truncate_dim: Optional[int] = None
+    ) -> dict:
         """
         Encode images and format the embeddings in the expected JSON structure
         """
-        embeddings = self.model.encode_image(
-            images,
-            truncate_dim=truncate_dim
-        )
-        
-        return {
-            "embeddings": embeddings.tolist(),
-            "embedding_type": "image_embeddings"
-        }
-    
-    def post_embeddings(self, embeddings: dict, endpoint_url: str, headers: Optional[dict] = None) -> requests.Response:
+        embeddings = self.model.encode_image(images, truncate_dim=truncate_dim)
+
+        return {"embeddings": embeddings.tolist(), "embedding_type": "image_embeddings"}
+
+    def post_embeddings(
+        self, embeddings: dict, endpoint_url: str, headers: Optional[dict] = None
+    ) -> requests.Response:
         """
         Post embeddings to the specified endpoint
         """
         if headers is None:
-            headers = {'Content-Type': 'application/json'}
-        
-        response = requests.post(
-            endpoint_url,
-            json=embeddings,
-            headers=headers
-        )
+            headers = {"Content-Type": "application/json"}
+
+        response = requests.post(endpoint_url, json=embeddings, headers=headers)
         response.raise_for_status()
         return response
+
 
 # Create global loader instance, (requires access to host computer!)
 if sys.platform == "darwin" and os.environ.get("LOAD_PHOTOS_DB"):
@@ -146,7 +140,14 @@ server = Server("video-jungle-mcp")
 videos_at_start = vj.video_files.list()
 counter = 10
 
-tools = ["add-video", "search-local-videos", "search-remote-videos", "generate-edit-from-videos", "generate-edit-from-single-video"]
+tools = [
+    "add-video",
+    "search-local-videos",
+    "search-remote-videos",
+    "generate-edit-from-videos",
+    "generate-edit-from-single-video",
+]
+
 
 @server.list_resources()
 async def handle_list_resources() -> list[types.Resource]:
@@ -169,7 +170,7 @@ async def handle_list_resources() -> list[types.Resource]:
         for video in videos_at_start
     ]
 
-    '''
+    """
     projects = [
         types.Resource(
             uri=AnyUrl(f"vj://project/{project.id}"),
@@ -178,9 +179,9 @@ async def handle_list_resources() -> list[types.Resource]:
             mimeType="application/json",
         )
         for project in projects
-    ]'''
+    ]"""
 
-    return videos # + projects
+    return videos  # + projects
 
 
 @server.read_resource()
@@ -198,6 +199,7 @@ async def handle_read_resource(uri: AnyUrl) -> str:
         video = vj.video_files.get(id)
         return video.model_dump_json()
     raise ValueError(f"Video not found: {id}")
+
 
 @server.list_prompts()
 async def handle_list_prompts() -> list[types.Prompt]:
@@ -233,7 +235,7 @@ async def handle_get_prompt(
 
     if not arguments:
         raise ValueError("Missing arguments")
-    
+
     search_query = arguments.get("search_query")
     if not search_query:
         raise ValueError("Missing search_query")
@@ -245,10 +247,11 @@ async def handle_get_prompt(
                 role="user",
                 content=types.TextContent(
                     type="text",
-                    text=f"Here are the exact label names you need to match in your query:\n\n For the specific query: {search_query}, you should use the following labels: {photos_loader.db.labels_as_dict} for the search-local-videos tool"
-                    )
+                    text=f"Here are the exact label names you need to match in your query:\n\n For the specific query: {search_query}, you should use the following labels: {photos_loader.db.labels_as_dict} for the search-local-videos tool",
+                ),
             )
-        ])
+        ],
+    )
 
 
 @server.list_tools()
@@ -300,9 +303,14 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {
                     "project_id": {"type": "string"},
                     "resolution": {"type": "string"},
-                    "edit": {"type": "array", "cuts": {"video_id": "string",
-                                                       "video_start_time": "time",
-                                                       "video_end_time": "time",}},
+                    "edit": {
+                        "type": "array",
+                        "cuts": {
+                            "video_id": "string",
+                            "video_start_time": "time",
+                            "video_end_time": "time",
+                        },
+                    },
                 },
                 "required": ["edit", "project_id", "cuts"],
             },
@@ -316,22 +324,26 @@ async def handle_list_tools() -> list[types.Tool]:
                     "project_id": {"type": "string"},
                     "resolution": {"type": "string"},
                     "video_id": {"type": "string"},
-                    "edit": {"type": "array", "cuts": {
-                                                       "video_start_time": "time",
-                                                       "video_end_time": "time",}
-                                                       },
+                    "edit": {
+                        "type": "array",
+                        "cuts": {
+                            "video_start_time": "time",
+                            "video_end_time": "time",
+                        },
+                    },
                 },
                 "required": ["edit", "project_id", "video_id", "cuts"],
             },
         ),
     ]
 
+
 def format_single_video(video):
     """
     Format a single video metadata tuple (metadata_dict, confidence_score)
     Returns a formatted string and a Python code string representation
     """
-    try: 
+    try:
         # Create human-readable format
         readable_format = f"""
             Video Embedding Result:
@@ -343,7 +355,7 @@ def format_single_video(video):
         """
     except Exception as e:
         raise ValueError(f"Error formatting video: {str(e)}")
-    
+
     return readable_format
 
 
@@ -366,6 +378,7 @@ def format_video_info(video):
     except Exception as e:
         return f"Error formatting video: {str(e)}"
 
+
 def format_video_info_long(video):
     try:
         if video.get("script") is not None:
@@ -385,7 +398,8 @@ def format_video_info_long(video):
         )
     except Exception as e:
         return f"Error formatting video: {str(e)}"
-    
+
+
 @server.call_tool()
 async def handle_call_tool(
     name: str, arguments: dict | None
@@ -399,7 +413,7 @@ async def handle_call_tool(
 
     if not arguments:
         raise ValueError("Missing arguments")
-    
+
     if name == "add-video" and arguments:
         name = arguments.get("name")
         url = arguments.get("url")
@@ -408,7 +422,7 @@ async def handle_call_tool(
             raise ValueError("Missing name or content")
 
         # Update server state
-        
+
         vj.video_files.create(name=name, filename=str(url), upload_method="url")
 
         # Notify clients that resources have changed
@@ -424,17 +438,15 @@ async def handle_call_tool(
 
         if not query:
             raise ValueError("Missing query")
-        
+
         embeddings = model_loader.encode_text(query)
         logging.info(f"Embeddings are:  {embeddings}")
 
         response = model_loader.post_embeddings(
-                    embeddings,
-                    'https://api.video-jungle.com/video-file/embedding-search',
-                    headers={
-                        'Content-Type': 'application/json',
-                        'X-API-KEY': VJ_API_KEY
-                    })
+            embeddings,
+            "https://api.video-jungle.com/video-file/embedding-search",
+            headers={"Content-Type": "application/json", "X-API-KEY": VJ_API_KEY},
+        )
 
         logging.info(f"Response is: {response.json()}")
         if response.status_code != 200:
@@ -442,7 +454,7 @@ async def handle_call_tool(
         else:
             videos = response.json()
         embedding_search_response = [format_single_video(video) for video in videos]
-        videos = vj.video_files.search(query) 
+        videos = vj.video_files.search(query)
         logging.info(f"num videos are: {len(videos)}")
         if videos:
             logging.info(f"{videos[0]}")
@@ -466,12 +478,14 @@ async def handle_call_tool(
                 ),
             )
         ]
-        return b # type: ignore
-    
+        return b  # type: ignore
+
     if name == "search-local-videos" and arguments:
         if not os.environ.get("LOAD_PHOTOS_DB"):
-            raise ValueError("You must set the LOAD_PHOTOS_DB environment variable to True to use this tool")
-        
+            raise ValueError(
+                "You must set the LOAD_PHOTOS_DB environment variable to True to use this tool"
+            )
+
         keyword = arguments.get("keyword")
         if not keyword:
             raise ValueError("Missing keyword")
@@ -479,20 +493,17 @@ async def handle_call_tool(
             db = photos_loader.db
             videos = get_videos_by_keyword(db, keyword)
             return [
-            types.TextContent(
-                type="text",
-                text=(
-                    f"Number of Videos Returned: {len(videos)}\n\nShowing first 100:"
-                    + "\n".join(
-                        f"- {video}"
-                        for video in videos[:100]
-                    )
-                ),
-            )
-        ]
-        except Exception as e:
+                types.TextContent(
+                    type="text",
+                    text=(
+                        f"Number of Videos Returned: {len(videos)}\n\nShowing first 100:"
+                        + "\n".join(f"- {video}" for video in videos[:100])
+                    ),
+                )
+            ]
+        except Exception:
             raise RuntimeError("Local Photos database not yet initialized")
-        
+
     if name == "generate-edit-from-videos" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")
@@ -507,24 +518,34 @@ async def handle_call_tool(
             raise ValueError("Missing project")
         if not resolution:
             resolution = "1080x1920"
-        
+
         if resolution == "1080p":
             resolution = "1920x1080"
         elif resolution == "720p":
             resolution = "1280x720"
-        
+
         try:
             w, h = resolution.split("x")
             _ = f"{int(w)}x{int(w)}"
         except Exception as e:
-            raise ValueError(f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}")
-        
-        updated_edit = [{**cut, "type": "videofile", 
-                        "audio_levels": [{
-                         "audio_level": "0.5",
-                         "start_time": cut["video_start_time"],
-                         "end_time": cut["video_end_time"],}]
-                         } for cut in edit]
+            raise ValueError(
+                f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
+            )
+
+        updated_edit = [
+            {
+                **cut,
+                "type": "videofile",
+                "audio_levels": [
+                    {
+                        "audio_level": "0.5",
+                        "start_time": cut["video_start_time"],
+                        "end_time": cut["video_end_time"],
+                    }
+                ],
+            }
+            for cut in edit
+        ]
 
         logging.info(f"updated edit is: {updated_edit}")
 
@@ -534,15 +555,17 @@ async def handle_call_tool(
             "video_output_resolution": resolution,
             "video_output_fps": 60.0,
             "video_output_filename": "output_video.mp4",
-            "audio_overlay": [], # TODO: add this back in 
-            "video_series_sequential": updated_edit
+            "audio_overlay": [],  # TODO: add this back in
+            "video_series_sequential": updated_edit,
         }
 
-        try: 
+        try:
             proj = vj.projects.get(project)
         except Exception as e:
             logging.info(f"project not found, creating new project because {e}")
-            proj = vj.projects.create(name=project, description="Claude generated project")
+            proj = vj.projects.create(
+                name=project, description="Claude generated project"
+            )
             project = proj.id
             created = True
 
@@ -554,23 +577,33 @@ async def handle_call_tool(
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
             # don't block, because this might take a while
-            env_vars = {"VJ_API_KEY": VJ_API_KEY,
-                        'PATH': os.environ['PATH']}
-            logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
-            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"video-edit-{project}.mp4", proj.name], 
-                             env=env_vars)
+            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
+            logging.info(
+                f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}"
+            )
+            subprocess.Popen(
+                [
+                    "uv",
+                    "run",
+                    "viewer",
+                    edit["asset_id"],
+                    f"video-edit-{project}.mp4",
+                    proj.name,
+                ],
+                env=env_vars,
+            )
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
-            
+
         if created:
             # we created a new project so let the user / LLM know
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} and created edit {edit} with raw edit info: {updated_edit}"
+                    text=f"Created new project {proj.name} and created edit {edit} with raw edit info: {updated_edit}",
                 )
             ]
-        
+
         return [
             types.TextContent(
                 type="text",
@@ -583,7 +616,7 @@ async def handle_call_tool(
         video_id = arguments.get("video_id")
 
         resolution = arguments.get("resolution")
-        created = False 
+        created = False
 
         logging.info(f"edit is: {edit} and the type is: {type(edit)}")
 
@@ -595,26 +628,35 @@ async def handle_call_tool(
             raise ValueError("Missing video_id")
         if not resolution:
             resolution = "1080x1920"
-        
+
         try:
             w, h = resolution.split("x")
             _ = f"{int(w)}x{int(w)}"
         except Exception as e:
-            raise ValueError(f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}")
-        
+            raise ValueError(
+                f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
+            )
+
         try:
-            updated_edit = [{"video_id": video_id,
-                            "video_start_time": cut["video_start_time"],
-                            "video_end_time": cut["video_end_time"],
-                            "type": "videofile", 
-                            "audio_levels": [{
+            updated_edit = [
+                {
+                    "video_id": video_id,
+                    "video_start_time": cut["video_start_time"],
+                    "video_end_time": cut["video_end_time"],
+                    "type": "videofile",
+                    "audio_levels": [
+                        {
                             "audio_level": "0.5",
                             "start_time": cut["video_start_time"],
-                            "end_time": cut["video_end_time"],}]
-                            } for cut in edit]
+                            "end_time": cut["video_end_time"],
+                        }
+                    ],
+                }
+                for cut in edit
+            ]
         except Exception as e:
             raise ValueError(f"Error updating edit: {e}")
-        
+
         logging.info(f"updated edit is: {updated_edit}")
 
         json_edit = {
@@ -623,14 +665,16 @@ async def handle_call_tool(
             "video_output_resolution": resolution,
             "video_output_fps": 60.0,
             "video_output_filename": "output_video.mp4",
-            "audio_overlay": [], # TODO: add this back in 
-            "video_series_sequential": updated_edit
+            "audio_overlay": [],  # TODO: add this back in
+            "video_series_sequential": updated_edit,
         }
 
-        try: 
+        try:
             proj = vj.projects.get(project)
-        except Exception as e:
-            proj = vj.projects.create(name=project, description=f"Claude generated project")
+        except Exception:
+            proj = vj.projects.create(
+                name=project, description="Claude generated project"
+            )
             project = proj.id
             created = True
 
@@ -642,11 +686,21 @@ async def handle_call_tool(
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
             # don't block, because this might take a while
-            env_vars = {"VJ_API_KEY": VJ_API_KEY,
-                        'PATH': os.environ['PATH']}
-            logging.info(f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}")
-            subprocess.Popen(["uv", "run", "viewer", edit['asset_id'], f"video-edit-{project}.mp4", proj.name], 
-                             env=env_vars)
+            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
+            logging.info(
+                f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}"
+            )
+            subprocess.Popen(
+                [
+                    "uv",
+                    "run",
+                    "viewer",
+                    edit["asset_id"],
+                    f"video-edit-{project}.mp4",
+                    proj.name,
+                ],
+                env=env_vars,
+            )
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
         if created:
@@ -655,7 +709,7 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} with raw edit info: {edit}"
+                    text=f"Created new project {proj.name} with raw edit info: {edit}",
                 )
             ]
 
@@ -665,6 +719,7 @@ async def handle_call_tool(
                 text=f"Generated edit in project {proj.name} with raw edit info: {edit}",
             )
         ]
+
 
 async def main():
     # Run the server using stdin/stdout streams
