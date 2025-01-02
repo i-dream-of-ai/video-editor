@@ -71,6 +71,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
+        // Get command line arguments
+        let arguments = ProcessInfo.processInfo.arguments
+        
+        // Skip the first argument (which is the app path)
+        if arguments.count > 1 {
+            for argument in arguments.dropFirst() {
+                if let url = URL(string: argument), url.scheme == "videojungle" {
+                    handleURL(url)
+                }
+            }
+        }
         // Register for Apple Events
         NSAppleEventManager.shared().setEventHandler(
             self,
@@ -80,8 +91,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         )
     }
     
+    func handleURL(_ url: URL) {
+        // Parse the URL and handle different actions
+        switch url.host {
+        case "upload":
+            // Open your upload window/view
+            self.showUploadWindow()
+        default:
+            print("Unknown URL command: \(url)")
+        }
+    }
+    
     @objc func handleURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent: NSAppleEventDescriptor) {
-        showUploadWindow()
+        guard let urlString = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+            let url = URL(string: urlString) else {
+            return
+        }
+        
+        // Handle different commands
+        if url.host == "upload" {
+            DispatchQueue.main.async {
+                self.showUploadWindow()
+            }
+        }
     }
 
     func setupStatusItem() {
