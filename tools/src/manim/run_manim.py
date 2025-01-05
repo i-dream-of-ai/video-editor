@@ -13,10 +13,9 @@ process = subprocess.Popen(
 process.stdin.write("self.add(Circle())\n")
 process.stdin.flush()
 
-# To read its output:
 while True:
-    output = process.stdout.readline()
-    if output:
-        print(output.strip())
-    if process.poll() is not None:
+    b = input(": ")
+    if b == "exit":
         break
+    process.stdin.write(b + "\n")
+    process.stdin.flush()
