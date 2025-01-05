@@ -31,6 +31,8 @@ members = ["tools"]
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",
+    "manim>=0.18.1",
+    "mcp[cli]===1.2.0rc1",
     "pre-commit>=4.0.1",
     "ruff>=0.8.4",
 ]
