@@ -137,7 +137,12 @@ model_loader = EmbeddingModelLoader()
 
 server = Server("video-jungle-mcp")
 
-videos_at_start = vj.video_files.list()
+try:
+    videos_at_start = vj.video_files.list()
+except Exception as e:
+    logging.error(f"Error getting videos at start: {e}")
+    videos_at_start = []
+
 counter = 10
 
 tools = [
