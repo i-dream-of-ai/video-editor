@@ -4,6 +4,7 @@ import subprocess
 import sys
 import threading
 from typing import List, Optional, Union
+import json
 
 import mcp.server.stdio
 import mcp.types as types
@@ -758,9 +759,21 @@ async def handle_call_tool(
         if not filename:
             filename = "bar_chart.mp4"
         # Render the bar chart
-        file_path = render_bar_chart(
-            x_values, y_values, x_label, y_label, title, filename
+        data = {
+            "x_values": x_values,
+            "y_values": y_values,
+            "x_label": x_label,
+            "y_label": y_label,
+            "title": title,
+            "filename": filename,
+        }
+        with open("chart_data.json", "w") as f:
+            json.dump(data, f, indent=4)
+
+        subprocess.call(
+            ["uv", "run", "src/video_editor_mcp/generate_charts.py", "chart_data.json"]
         )
+        file_path = os.path.join(os.getcwd(), filename)
 
         return [
             types.TextContent(

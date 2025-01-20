@@ -1,11 +1,8 @@
 from manim import *
 import numpy as np
-from multiprocessing import Process
-import os
 
-
-def render_animation():
-    scene.render()
+import sys
+import json
 
 
 class BarChartAnimation(Scene):
@@ -124,29 +121,41 @@ def render_bar_chart(
         title=title,
     )
     scene.render()
-    render_process = Process(target=render_animation)
-    render_process.start()
-    # render_process.join()
-    return os.path.join(os.getcwd(), filename)
+    return
 
 
 # Example usage
 if __name__ == "__main__":
     # Sample data
-    categories = ["A", "B", "C", "D", "E"]
-    values = [4, 8, 2, 6, 5]
+    input_json_file = sys.argv[1]
+    with open(input_json_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if "x_values" not in data or "y_values" not in data:
+        raise ValueError("Invalid JSON data format")
+
+    x_values = data["x_values"]
+    y_values = data["y_values"]
+    x_label = data["x_label"] or "Categories"
+    y_label = data["y_label"] or "Values"
+    title = data["title"]
+    filename = data["filename"]
 
     # Configure scene settings
+    config.verbosity = "ERROR"
     config.pixel_height = 720
     config.pixel_width = 1280
     config.frame_height = 8
     config.frame_width = 14
+    config.output_file = filename
+    config.preview = True
+    config.quality = "medium_quality"
 
     scene = BarChartAnimation(
-        x_values=categories,
-        y_values=values,
-        x_label="Categories",
-        y_label="Values",
-        title="Bar Chart",
+        x_values=x_values,
+        y_values=y_values,
+        x_label=x_label,
+        y_label=y_label,
+        title=title,
     )
+
     scene.render()
