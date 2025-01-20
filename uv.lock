@@ -3185,6 +3185,7 @@ version = "0.1.13"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
+    { name = "manim" },
     { name = "mcp" },
     { name = "osxphotos" },
     { name = "pillow" },
@@ -3207,6 +3208,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "einops", specifier = ">=0.8.0" },
+    { name = "manim", specifier = ">=0.18.1" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "osxphotos", specifier = ">=0.69.2" },
     { name = "pillow", specifier = ">=11.0.0" },

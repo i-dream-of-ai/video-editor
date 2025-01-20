@@ -16,6 +16,7 @@ from transformers import AutoModel
 from videojungle import ApiClient
 
 from .search_local_videos import get_videos_by_keyword
+from .generate_charts import BarChartAnimation
 
 if os.environ.get("VJ_API_KEY"):
     VJ_API_KEY = os.environ.get("VJ_API_KEY")
