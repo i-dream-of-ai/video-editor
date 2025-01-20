@@ -16,7 +16,7 @@ from transformers import AutoModel
 from videojungle import ApiClient
 
 from .search_local_videos import get_videos_by_keyword
-from .generate_charts import BarChartAnimation
+from .generate_charts import render_bar_chart
 
 if os.environ.get("VJ_API_KEY"):
     VJ_API_KEY = os.environ.get("VJ_API_KEY")
@@ -151,6 +151,7 @@ tools = [
     "search-local-videos",
     "search-remote-videos",
     "generate-edit-from-videos",
+    "create-video-bar-chart-from-two-axis-data",
     "generate-edit-from-single-video",
 ]
 
@@ -341,6 +342,22 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                 },
                 "required": ["edit", "project_id", "video_id", "cuts"],
+            },
+        ),
+        types.Tool(
+            name="create-video-bar-chart-from-two-axis-data",
+            description="Create a video bar chart from two-axis data",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "x_values": {"type": "array", "items": {"type": "string"}},
+                    "y_values": {"type": "array", "items": {"type": "number"}},
+                    "x_label": {"type": "string"},
+                    "y_label": {"type": "string"},
+                    "title": {"type": "string"},
+                    "filename": {"type": "string"},
+                },
+                "required": ["x_values", "y_values", "x_label", "y_label", "title"],
             },
         ),
     ]
@@ -725,6 +742,27 @@ async def handle_call_tool(
             types.TextContent(
                 type="text",
                 text=f"Generated edit in project {proj.name} with raw edit info: {edit}",
+            )
+        ]
+
+    if name == "create-video-bar-chart-from-two-axis-data" and arguments:
+        x_values = arguments.get("x_values")
+        y_values = arguments.get("y_values")
+        x_label = arguments.get("x_label")
+        y_label = arguments.get("y_label")
+        title = arguments.get("title")
+        filename = arguments.get("filename")
+
+        if not x_values or not y_values or not x_label or not y_label or not title:
+            raise ValueError("Missing required arguments")
+
+        # Render the bar chart
+        render_bar_chart(x_values, y_values, x_label, y_label, title, filename)
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Bar chart generated with x_values: {x_values}, y_values: {y_values}, x_label: {x_label}, y_label: {y_label}, title: {title}, filename: {filename}",
             )
         ]
 
