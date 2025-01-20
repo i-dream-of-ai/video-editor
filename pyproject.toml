@@ -10,6 +10,7 @@ dependencies = [
  "mcp>=1.0.0",
  "osxphotos>=0.69.2",
  "pillow>=11.0.0",
+ "requests>=2.32.3",
  "thefuzz>=0.22.1",
  "timm>=1.0.12",
  "torch>=2.5.1",
