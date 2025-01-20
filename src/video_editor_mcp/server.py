@@ -778,7 +778,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text=f"Bar chart generated with x_values: {x_values}, y_values: {y_values}, x_label: {x_label}, y_label: {y_label}, title: {title}, filename: {filename}. \nSaved to {file_path}",
+                text=f"Bar chart video generated.\nSaved to {file_path}",
             )
         ]
 
