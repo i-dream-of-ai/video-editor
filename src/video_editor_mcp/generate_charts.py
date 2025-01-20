@@ -1,5 +1,11 @@
 from manim import *
 import numpy as np
+from multiprocessing import Process
+import os
+
+
+def render_animation():
+    scene.render()
 
 
 class BarChartAnimation(Scene):
@@ -118,6 +124,10 @@ def render_bar_chart(
         title=title,
     )
     scene.render()
+    render_process = Process(target=render_animation)
+    render_process.start()
+    # render_process.join()
+    return os.path.join(os.getcwd(), filename)
 
 
 # Example usage

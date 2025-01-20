@@ -755,14 +755,17 @@ async def handle_call_tool(
 
         if not x_values or not y_values or not x_label or not y_label or not title:
             raise ValueError("Missing required arguments")
-
+        if not filename:
+            filename = "bar_chart.mp4"
         # Render the bar chart
-        render_bar_chart(x_values, y_values, x_label, y_label, title, filename)
+        file_path = render_bar_chart(
+            x_values, y_values, x_label, y_label, title, filename
+        )
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Bar chart generated with x_values: {x_values}, y_values: {y_values}, x_label: {x_label}, y_label: {y_label}, title: {title}, filename: {filename}",
+                text=f"Bar chart generated with x_values: {x_values}, y_values: {y_values}, x_label: {x_label}, y_label: {y_label}, title: {title}, filename: {filename}. \nSaved to {file_path}",
             )
         ]
 
