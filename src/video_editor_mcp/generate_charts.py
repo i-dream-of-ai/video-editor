@@ -101,6 +101,7 @@ class BarChartAnimation(Scene):
 def render_bar_chart(
     x_values, y_values, x_label, y_label, title, filename="bar_chart.mp4"
 ):
+    config.verbosity = "ERROR"
     config.pixel_height = 720
     config.pixel_width = 1280
     config.frame_height = 8
