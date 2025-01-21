@@ -153,6 +153,7 @@ tools = [
     "search-remote-videos",
     "generate-edit-from-videos",
     "create-video-bar-chart-from-two-axis-data",
+    "create-video-line-chart-from-two-axis-data",
     "generate-edit-from-single-video",
 ]
 
@@ -178,8 +179,7 @@ async def handle_list_resources() -> list[types.Resource]:
         )
         for video in videos_at_start
     ]
-
-    """
+    """ 
     projects = [
         types.Resource(
             uri=AnyUrl(f"vj://project/{project.id}"),
@@ -348,6 +348,22 @@ async def handle_list_tools() -> list[types.Tool]:
         types.Tool(
             name="create-video-bar-chart-from-two-axis-data",
             description="Create a video bar chart from two-axis data",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "x_values": {"type": "array", "items": {"type": "string"}},
+                    "y_values": {"type": "array", "items": {"type": "number"}},
+                    "x_label": {"type": "string"},
+                    "y_label": {"type": "string"},
+                    "title": {"type": "string"},
+                    "filename": {"type": "string"},
+                },
+                "required": ["x_values", "y_values", "x_label", "y_label", "title"],
+            },
+        ),
+        types.Tool(
+            name="create-video-line-chart-from-two-axis-data",
+            description="Create a video line chart from two-axis data",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -746,7 +762,11 @@ async def handle_call_tool(
             )
         ]
 
-    if name == "create-video-bar-chart-from-two-axis-data" and arguments:
+    if (
+        name == "create-video-bar-chart-from-two-axis-data"
+        or "create-video-line-chart-from-two-axis-data"
+        and arguments
+    ):
         x_values = arguments.get("x_values")
         y_values = arguments.get("y_values")
         x_label = arguments.get("x_label")
@@ -757,7 +777,13 @@ async def handle_call_tool(
         if not x_values or not y_values or not x_label or not y_label or not title:
             raise ValueError("Missing required arguments")
         if not filename:
-            filename = "bar_chart.mp4"
+            if name == "create-video-bar-chart-from-two-axis-data":
+                filename = "bar_chart.mp4"
+            elif name == "create-video-line-chart-from-two-axis-data":
+                filename = "line_chart.mp4"
+            else:
+                raise ValueError("Invalid tool name")
+
         # Render the bar chart
         data = {
             "x_values": x_values,
@@ -770,17 +796,42 @@ async def handle_call_tool(
         with open("chart_data.json", "w") as f:
             json.dump(data, f, indent=4)
 
-        subprocess.call(
-            ["uv", "run", "src/video_editor_mcp/generate_charts.py", "chart_data.json"]
-        )
         file_path = os.path.join(os.getcwd(), filename)
 
-        return [
-            types.TextContent(
-                type="text",
-                text=f"Bar chart video generated.\nSaved to {file_path}",
+        if name == "create-video-bar-chart-from-two-axis-data":
+            subprocess.Popen(
+                [
+                    "uv",
+                    "run",
+                    "src/video_editor_mcp/generate_charts.py",
+                    "chart_data.json",
+                    "bar",
+                ]
             )
-        ]
+
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Bar chart video  generated.\nSaved to {file_path}",
+                )
+            ]
+
+        elif name == "create-video-line-chart-from-two-axis-data":
+            subprocess.Popen(
+                [
+                    "uv",
+                    "run",
+                    "src/video_editor_mcp/generate_charts.py",
+                    "chart_data.json",
+                    "line",
+                ]
+            )
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"Line chart video  generated.\nSaved to {file_path}",
+                )
+            ]
 
 
 async def main():
