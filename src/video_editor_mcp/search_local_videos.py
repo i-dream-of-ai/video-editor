@@ -14,6 +14,31 @@ def load_keywords(keyword_dict):
     return {k.lower(): v for k, v in keyword_dict.items()}
 
 
+def videos_to_json(video_list):
+    simplified_videos = []
+    for video in video_list:
+        simplified = {
+            "filename": video.filename,
+            "date": video.date.isoformat() if video.date else None,
+            "duration": video.exif_info.duration,
+            "labels": video.labels,
+            "latitude": video.latitude,
+            "longitude": video.longitude,
+            "place_name": video.place.name
+            if video.place and hasattr(video.place, "name")
+            else None,
+            "width": video.width,
+            "height": video.height,
+            "fps": video.exif_info.fps,
+            "codec": video.exif_info.codec,
+            "camera_make": video.exif_info.camera_make,
+            "camera_model": video.exif_info.camera_model,
+        }
+        simplified_videos.append(simplified)
+
+    return simplified_videos
+
+
 def match_description(description, keyword_dict, threshold=60):
     keywords = load_keywords(keyword_dict)
 
@@ -56,7 +81,7 @@ def get_videos_by_keyword(photosdb, keyword, start_date=None, end_date=None):
         )
 
     # Convert to list of dictionaries if needed
-    video_data = [video.asdict() for video in videos]
+    video_data = videos_to_json(videos)
 
     return video_data
 

@@ -588,10 +588,7 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=(
-                        f"Number of Videos Returned: {len(videos)}\n\nShowing first 100:"
-                        + "\n".join(f"- {video}" for video in videos[:100])
-                    ),
+                    text=(f"Number of Videos Returned: {len(videos)}\n{videos}"),
                 )
             ]
         except Exception:
