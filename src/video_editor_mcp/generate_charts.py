@@ -164,10 +164,14 @@ class BarChartAnimation(Scene):
 
     def construct(self):
         # Calculate ranges
+        self.camera.frame_height = 10
+        self.camera.frame_width = 17
+        self.camera.background_color = "#ece6e2"
+        self.camera.frame_center = [-1.3, 0, 0]
+        self.black = "#343434"
+
         y_max = max(self.y_values)
         y_padding = y_max * 0.2
-        self.camera.background_color = "#ece6e2"
-        self.black = "#343434"
         Text.set_default(font="Helvetica", color=self.black)
         # Create axes with adjusted ranges and position
         axes = Axes(

@@ -8,6 +8,7 @@ dependencies = [
  "einops>=0.8.0",
  "manim>=0.18.1",
  "mcp>=1.0.0",
+ "numpy>=2.2.2",
  "osxphotos>=0.69.2",
  "pillow>=11.0.0",
  "requests>=2.32.3",

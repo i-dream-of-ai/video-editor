@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 import threading
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 import json
 
 import mcp.server.stdio
@@ -18,6 +18,7 @@ from videojungle import ApiClient
 
 from .search_local_videos import get_videos_by_keyword
 from .generate_charts import render_bar_chart
+import numpy as np
 
 if os.environ.get("VJ_API_KEY"):
     VJ_API_KEY = os.environ.get("VJ_API_KEY")
@@ -156,6 +157,41 @@ tools = [
     "create-video-line-chart-from-two-axis-data",
     "generate-edit-from-single-video",
 ]
+
+
+def validate_y_values(y_values: Any) -> bool:
+    """
+    Validates that y_values is a single-dimensional array/list of numbers.
+
+    Args:
+        y_values: The input to validate
+
+    Returns:
+        bool: True if validation passes
+
+    Raises:
+        ValueError: If validation fails with a descriptive message
+    """
+    # Check if input is a list or numpy array
+    if not isinstance(y_values, (list, np.ndarray)):
+        raise ValueError("y_values must be a list")
+
+    # Convert to numpy array for easier handling
+    y_array = np.array(y_values)
+
+    # Check if it's multi-dimensional
+    if len(y_array.shape) > 1:
+        raise ValueError("y_values must be a single-dimensional array")
+
+    # Check if all elements are numeric
+    if not np.issubdtype(y_array.dtype, np.number):
+        raise ValueError("all elements in y_values must be numbers")
+
+    # Check for NaN or infinite values
+    if np.any(np.isnan(y_array)) or np.any(np.isinf(y_array)):
+        raise ValueError("y_values cannot contain NaN or infinite values")
+
+    return True
 
 
 @server.list_resources()
@@ -301,6 +337,14 @@ async def handle_list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "keyword": {"type": "string"},
+                    "start_date": {
+                        "type": "string",
+                        "description": "ISO 8601 formatted datetime string (e.g. 2024-01-21T15:30:00Z)",
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "description": "ISO 8601 formatted datetime string (e.g. 2024-01-21T15:30:00Z)",
+                    },
                 },
                 "required": ["keyword"],
             },
@@ -531,9 +575,16 @@ async def handle_call_tool(
         keyword = arguments.get("keyword")
         if not keyword:
             raise ValueError("Missing keyword")
+        start_date = None
+        end_date = None
+
+        if arguments.get("start_date") and arguments.get("end_date"):
+            start_date = arguments.get("start_date")
+            end_date = arguments.get("end_date")
+
         try:
             db = photos_loader.db
-            videos = get_videos_by_keyword(db, keyword)
+            videos = get_videos_by_keyword(db, keyword, start_date, end_date)
             return [
                 types.TextContent(
                     type="text",
@@ -783,6 +834,10 @@ async def handle_call_tool(
                 filename = "line_chart.mp4"
             else:
                 raise ValueError("Invalid tool name")
+
+        y_axis_safe = validate_y_values(y_values)
+        if not y_axis_safe:
+            raise ValueError("Y values are not valid")
 
         # Render the bar chart
         data = {

@@ -1,6 +1,7 @@
 import json
 import sys
 from collections import defaultdict
+from datetime import datetime
 
 import osxphotos
 from thefuzz import fuzz
@@ -29,13 +30,30 @@ def match_description(description, keyword_dict, threshold=60):
     return sorted(matches.items(), key=lambda x: x[1], reverse=True)
 
 
-def get_videos_by_keyword(photosdb, keyword):
+def get_videos_by_keyword(photosdb, keyword, start_date=None, end_date=None):
     # Use only_movies=True instead of is_video=True
-    videos = photosdb.query(
-        osxphotos.QueryOptions(
-            label=[keyword], photos=False, movies=True, incloud=True, ignore_case=True
+    if start_date and end_date:
+        videos = photosdb.query(
+            osxphotos.QueryOptions(
+                label=[keyword],
+                photos=False,
+                movies=True,
+                incloud=True,
+                ignore_case=True,
+                from_date=datetime.fromisoformat(start_date.replace("Z", "+00:00")),
+                to_date=datetime.fromisoformat(end_date.replace("Z", "+00:00")),
+            )
         )
-    )
+    else:
+        videos = photosdb.query(
+            osxphotos.QueryOptions(
+                label=[keyword],
+                photos=False,
+                movies=True,
+                incloud=True,
+                ignore_case=True,
+            )
+        )
 
     # Convert to list of dictionaries if needed
     video_data = [video.asdict() for video in videos]
@@ -82,3 +100,6 @@ if __name__ == "__main__":
     keywords = video_dict
     matches = match_description("me skateboarding", keywords)
     print(matches)
+    import IPython
+
+    IPython.embed()
