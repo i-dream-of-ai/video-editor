@@ -111,6 +111,7 @@ class LineGraphAnimation(Scene):
         self.camera.frame_height = 10
         self.camera.frame_width = 17
         self.camera.background_color = "#ece6e2"
+        self.camera.frame_center = [-1.3, 0, 0]
         self.black = "#343434"
         Text.set_default(font="Helvetica", color=self.black)
         axes = self.create_axes()
