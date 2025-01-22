@@ -848,7 +848,7 @@ async def handle_call_tool(
         with open("chart_data.json", "w") as f:
             json.dump(data, f, indent=4)
 
-        file_path = os.path.join(os.getcwd(), filename)
+        file_path = os.path.join(os.getcwd(), "media/videos/720p30/", filename)
 
         if name == "create-video-bar-chart-from-two-axis-data":
             subprocess.Popen(
