@@ -202,6 +202,7 @@ async def handle_list_resources() -> list[types.Resource]:
     """
     global counter, videos_at_start
     counter += 1
+    """
     if counter % 10 == 0:
         videos = vj.video_files.list()
         videos_at_start = videos
@@ -215,7 +216,6 @@ async def handle_list_resources() -> list[types.Resource]:
         )
         for video in videos_at_start
     ]
-    """ 
     projects = [
         types.Resource(
             uri=AnyUrl(f"vj://project/{project.id}"),
@@ -226,7 +226,7 @@ async def handle_list_resources() -> list[types.Resource]:
         for project in projects
     ]"""
 
-    return videos  # + projects
+    return []  # videos  # + projects
 
 
 @server.read_resource()
@@ -588,7 +588,9 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=(f"Number of Videos Returned: {len(videos)}\n{videos}"),
+                    text=(
+                        f"Number of Videos Returned: {len(videos)}. Here are the first 100 results: \n{videos[:100]}"
+                    ),
                 )
             ]
         except Exception:
