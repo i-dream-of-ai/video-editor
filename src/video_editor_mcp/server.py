@@ -14,7 +14,7 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pydantic import AnyUrl
 from transformers import AutoModel
-from videojungle import ApiClient
+from videojungle import ApiClient, VideoFilters
 
 from .search_local_videos import get_videos_by_keyword
 from .generate_charts import render_bar_chart
@@ -337,71 +337,53 @@ async def handle_list_tools() -> list[types.Tool]:
                         "format": "uuid",
                         "description": "Project ID to scope the search",
                     },
-                    "filters": {
-                        "type": "object",
-                        "properties": {
-                            "duration": {
-                                "type": "object",
-                                "properties": {
-                                    "min": {
-                                        "type": "number",
-                                        "minimum": 0,
-                                        "description": "Minimum video duration in seconds",
-                                    },
-                                    "max": {
-                                        "type": "number",
-                                        "minimum": 0,
-                                        "description": "Maximum video duration in seconds",
-                                    },
-                                },
-                            },
-                            "created_after": {
-                                "type": "string",
-                                "format": "date-time",
-                                "description": "Filter videos created after this datetime",
-                            },
-                            "created_before": {
-                                "type": "string",
-                                "format": "date-time",
-                                "description": "Filter videos created before this datetime",
-                            },
-                            "tags": {
-                                "type": "array",
-                                "items": {"type": "string"},
-                                "uniqueItems": True,
-                                "description": "Set of tags to filter by",
-                            },
-                            "min_relevance": {
-                                "type": "number",
-                                "minimum": 0,
-                                "maximum": 1,
-                                "description": "Minimum relevance score threshold",
-                            },
-                        },
+                    "duration_min": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Minimum video duration in seconds",
                     },
-                    "include_segments": {
-                        "type": "boolean",
-                        "default": True,
-                        "description": "Whether to include video segments in results",
+                    "duration_max": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Maximum video duration in seconds",
                     },
-                    "include_related": {
-                        "type": "boolean",
-                        "default": False,
-                        "description": "Whether to include related videos",
-                    },
-                    "query_audio": {
-                        "type": "string",
-                        "description": "Audio search query",
-                    },
-                    "query_img": {
-                        "type": "string",
-                        "description": "Image search query",
-                    },
+                },
+                "created_after": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Filter videos created after this datetime",
+                },
+                "created_before": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Filter videos created before this datetime",
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "uniqueItems": True,
+                    "description": "Set of tags to filter by",
+                },
+                "include_segments": {
+                    "type": "boolean",
+                    "default": True,
+                    "description": "Whether to include video segments in results",
+                },
+                "include_related": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Whether to include related videos",
+                },
+                "query_audio": {
+                    "type": "string",
+                    "description": "Audio search query",
+                },
+                "query_img": {
+                    "type": "string",
+                    "description": "Image search query",
                 },
                 "oneOf": [
                     {"required": ["query"]},
-                    {"required": ["query_audio"]},
-                    {"required": ["query_img"]},
                 ],
             },
         ),
@@ -601,15 +583,36 @@ async def handle_call_tool(
         # query_img = arguments.get("query_img")
         limit = arguments.get("limit", 10)
         project_id = arguments.get("project_id")
-        filters = arguments.get("filters", {})
+        tags = arguments.get("tags", [])
+        duration_min = arguments.get("duration_min", None)
+        duration_max = arguments.get("duration_max", None)
+        created_after = arguments.get("created_after", None)
+        created_before = arguments.get("created_before", None)
         include_segments = arguments.get("include_segments", True)
         include_related = arguments.get("include_related", False)
 
         # Validate that at least one query type is provided
-        if not any([query]):
-            raise ValueError("At least one of query must be provided")
+        if not any([query]) and not tags:
+            raise ValueError("At least one query or tag must be provided")
 
-        # Handle text query embedding search
+        # Perform the main search with all parameters
+        search_params = {
+            "limit": limit,
+            "include_segments": include_segments,
+            "include_related": include_related,
+            "tags": json.loads(tags),
+            "duration_min": duration_min,
+            "duration_max": duration_max,
+            "created_after": created_after,
+            "created_before": created_before,
+        }
+
+        # Add optional parameters
+        if query:
+            search_params["query"] = query
+        if project_id:
+            search_params["project_id"] = project_id
+
         if query:
             embeddings = model_loader.encode_text(query)
             logging.info(f"Embeddings are: {embeddings}")
@@ -627,24 +630,6 @@ async def handle_call_tool(
             videos = response.json()
             embedding_search_response = [format_single_video(video) for video in videos]
 
-        # Perform the main search with all parameters
-        search_params = {
-            "limit": limit,
-            "include_segments": include_segments,
-            "include_related": include_related,
-        }
-
-        # Add optional parameters
-        if query:
-            search_params["query"] = query
-        if project_id:
-            search_params["project_id"] = project_id
-        if filters:
-            search_params["filters"] = filters
-
-        videos = vj.video_files.search(**search_params)
-        logging.info(f"num videos are: {len(videos)}")
-
         if videos:
             logging.info(f"{videos[0]}")
 
@@ -657,6 +642,9 @@ async def handle_call_tool(
                 )
                 for video in videos
             ]
+
+        videos = vj.video_files.search(**search_params)
+        logging.info(f"num videos are: {len(videos)}")
 
         # Combine embedding search results and regular search results
         response_text = []
