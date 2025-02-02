@@ -325,9 +325,84 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string"},
+                    "query": {"type": "string", "description": "Text search query"},
+                    "limit": {
+                        "type": "integer",
+                        "default": 10,
+                        "minimum": 1,
+                        "description": "Maximum number of results to return",
+                    },
+                    "project_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Project ID to scope the search",
+                    },
+                    "filters": {
+                        "type": "object",
+                        "properties": {
+                            "duration": {
+                                "type": "object",
+                                "properties": {
+                                    "min": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "description": "Minimum video duration in seconds",
+                                    },
+                                    "max": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "description": "Maximum video duration in seconds",
+                                    },
+                                },
+                            },
+                            "created_after": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "Filter videos created after this datetime",
+                            },
+                            "created_before": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "Filter videos created before this datetime",
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "uniqueItems": True,
+                                "description": "Set of tags to filter by",
+                            },
+                            "min_relevance": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                                "description": "Minimum relevance score threshold",
+                            },
+                        },
+                    },
+                    "include_segments": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Whether to include video segments in results",
+                    },
+                    "include_related": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Whether to include related videos",
+                    },
+                    "query_audio": {
+                        "type": "string",
+                        "description": "Audio search query",
+                    },
+                    "query_img": {
+                        "type": "string",
+                        "description": "Image search query",
+                    },
                 },
-                "required": ["query"],
+                "oneOf": [
+                    {"required": ["query"]},
+                    {"required": ["query_audio"]},
+                    {"required": ["query_img"]},
+                ],
             },
         ),
         types.Tool(
@@ -520,30 +595,60 @@ async def handle_call_tool(
             )
         ]
     if name == "search-remote-videos" and arguments:
+        # Extract all possible search parameters
         query = arguments.get("query")
+        # query_audio = arguments.get("query_audio")
+        # query_img = arguments.get("query_img")
+        limit = arguments.get("limit", 10)
+        project_id = arguments.get("project_id")
+        filters = arguments.get("filters", {})
+        include_segments = arguments.get("include_segments", True)
+        include_related = arguments.get("include_related", False)
 
-        if not query:
-            raise ValueError("Missing query")
+        # Validate that at least one query type is provided
+        if not any([query]):
+            raise ValueError("At least one of query must be provided")
 
-        embeddings = model_loader.encode_text(query)
-        logging.info(f"Embeddings are:  {embeddings}")
+        # Handle text query embedding search
+        if query:
+            embeddings = model_loader.encode_text(query)
+            logging.info(f"Embeddings are: {embeddings}")
 
-        response = model_loader.post_embeddings(
-            embeddings,
-            "https://api.video-jungle.com/video-file/embedding-search",
-            headers={"Content-Type": "application/json", "X-API-KEY": VJ_API_KEY},
-        )
+            response = model_loader.post_embeddings(
+                embeddings,
+                "https://api.video-jungle.com/video-file/embedding-search",
+                headers={"Content-Type": "application/json", "X-API-KEY": VJ_API_KEY},
+            )
 
-        logging.info(f"Response is: {response.json()}")
-        if response.status_code != 200:
-            raise RuntimeError(f"Error searching for videos: {response.text}")
-        else:
+            logging.info(f"Response is: {response.json()}")
+            if response.status_code != 200:
+                raise RuntimeError(f"Error searching for videos: {response.text}")
+
             videos = response.json()
-        embedding_search_response = [format_single_video(video) for video in videos]
-        videos = vj.video_files.search(query)
+            embedding_search_response = [format_single_video(video) for video in videos]
+
+        # Perform the main search with all parameters
+        search_params = {
+            "limit": limit,
+            "include_segments": include_segments,
+            "include_related": include_related,
+        }
+
+        # Add optional parameters
+        if query:
+            search_params["query"] = query
+        if project_id:
+            search_params["project_id"] = project_id
+        if filters:
+            search_params["filters"] = filters
+
+        videos = vj.video_files.search(**search_params)
         logging.info(f"num videos are: {len(videos)}")
+
         if videos:
             logging.info(f"{videos[0]}")
+
+        # Format response based on number of results
         if len(videos) <= 3:
             return [
                 types.TextContent(
@@ -552,19 +657,25 @@ async def handle_call_tool(
                 )
                 for video in videos
             ]
-        # try to fit into context window
-        b = [
+
+        # Combine embedding search results and regular search results
+        response_text = []
+
+        if query:  # Only include embedding search results if text query was used
+            response_text.append(
+                f"Number of embedding search results: {len(embedding_search_response)}"
+            )
+            response_text.extend(embedding_search_response)
+
+        response_text.append(f"Number of Videos Returned: {len(videos)}")
+        response_text.extend(format_video_info(video) for video in videos)
+
+        return [
             types.TextContent(
                 type="text",
-                text=(
-                    f"Number of embedding search results: {len(embedding_search_response)}\n\n"
-                    + "\n".join(embedding_search_response)
-                    + f"Number of Videos Returned: {len(videos)}\n\n"
-                    + "\n".join(format_video_info(video) for video in videos)
-                ),
+                text="\n".join(response_text),
             )
         ]
-        return b  # type: ignore
 
     if name == "search-local-videos" and arguments:
         if not os.environ.get("LOAD_PHOTOS_DB"):
