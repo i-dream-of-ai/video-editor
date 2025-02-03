@@ -13,11 +13,13 @@ import requests
 from mcp.server import NotificationOptions, Server
 from mcp.server.models import InitializationOptions
 from pydantic import AnyUrl
+
 from transformers import AutoModel
 from videojungle import ApiClient, VideoFilters
 
 from .search_local_videos import get_videos_by_keyword
 from .generate_charts import render_bar_chart
+from .generate_opentimeline import create_otio_timeline
 import numpy as np
 
 if os.environ.get("VJ_API_KEY"):
@@ -773,6 +775,7 @@ async def handle_call_tool(
 
         edit = vj.projects.render_edit(project, json_edit)
 
+        # create_otio_timeline(json_edit) # create opentimeline edit
         try:
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")

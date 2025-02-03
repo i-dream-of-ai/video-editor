@@ -9,6 +9,7 @@ dependencies = [
  "manim>=0.18.1",
  "mcp>=1.0.0",
  "numpy>=2.2.2",
+ "opentimelineio>=0.17.0",
  "osxphotos>=0.69.2",
  "pillow>=11.0.0",
  "requests>=2.32.3",

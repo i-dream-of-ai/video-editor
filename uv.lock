@@ -1241,6 +1241,26 @@ wheels = [
 ]
 
 [[package]]
+name = "opentimelineio"
+version = "0.17.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/cf/9a8392a17295a6215f8edb5bb8b52f17f28f1fab8a1d9e6bbc6968785063/opentimelineio-0.17.0.tar.gz", hash = "sha256:10ef324e710457e9977387cd9ef91eb24a9837bfb370aec3330f9c0f146cea85", size = 2776600 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/85/755432a56f8eb770c8191fb8d4ef4403b6c5c40ce8d907713b71c3779226/OpenTimelineIO-0.17.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:cbf05c3e8c0187969f79e91f7495d1f0dc3609557874d8e601ba2e072c70ddb1", size = 1135218 },
+    { url = "https://files.pythonhosted.org/packages/44/09/e14b952be7220ba4a90d46269aebaf61343ea43a877d6800a698bb166ef9/OpenTimelineIO-0.17.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d3430c3f4e88c5365d7b6afbee920b0815b62ecf141abe44cd739c9eedc04284", size = 1135215 },
+    { url = "https://files.pythonhosted.org/packages/a9/54/886111649e79a929482c035448d2bd81bfa0508a2e742f9dd2922b1beb0d/OpenTimelineIO-0.17.0-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b1912345227b0bd1654c7153863eadbcee60362aa46340678e576e5d2aa3106a", size = 840193 },
+    { url = "https://files.pythonhosted.org/packages/0d/5d/7eb3d01745305eb6361ef0217b8f8d3b07394be61a7b1c9d9cb6c97e9c06/OpenTimelineIO-0.17.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:51e06eb11a868d970c1534e39faf916228d5163bf3598076d408d8f393ab0bd4", size = 793866 },
+    { url = "https://files.pythonhosted.org/packages/89/82/1eec23b38fbaf7f403ca5aadcc54bf5fa6e91c338908cb29b607dfbcdaff/OpenTimelineIO-0.17.0-cp311-cp311-win32.whl", hash = "sha256:5c3a3f4780b25a8c1a80d788becba691d12b629069ad8783d0db21027639276f", size = 526829 },
+    { url = "https://files.pythonhosted.org/packages/d9/50/06509effef6323ea893edb2eef1f7f97db18550e7a8d496ab56156b959bf/OpenTimelineIO-0.17.0-cp311-cp311-win_amd64.whl", hash = "sha256:43c8726b33af30ba42928972192311ea0f986edbbd5f74651bada182d4fe805c", size = 601994 },
+    { url = "https://files.pythonhosted.org/packages/f6/ea/489b8c317ff88348a3c68bfbc038c76f04bbba0da4c1f1d46fad6c1724bd/OpenTimelineIO-0.17.0-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:9a9af4105a088c0ab131780e49db268db7e37871aac33db842de6b2b16f14e39", size = 1144494 },
+    { url = "https://files.pythonhosted.org/packages/d8/68/e22cb29d78270bd7143dfb395ce5fc4e7494c9814ade1c7936acdfee5081/OpenTimelineIO-0.17.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:8e653ad1dd3b85f5c312a742dc24b61b330964aa391dc5bc072fe8b9c85adff1", size = 1144492 },
+    { url = "https://files.pythonhosted.org/packages/31/d5/10fa506b9bb9e962dbf78e7e9a316603c272af74097922bb32ce7939dfb2/OpenTimelineIO-0.17.0-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:02a77823c27a1b93c6b87682372c3734ac5fddc10bfe53875e657d43c60fb885", size = 839829 },
+    { url = "https://files.pythonhosted.org/packages/95/c2/19fd190f4c584216e06860f4b26670ff8635bd9cb6339ab92d216a08aaae/OpenTimelineIO-0.17.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4f4efcf3ddd81b62c4feb49a0bcc309b50ffeb6a8c48ab173d169a029006f4d", size = 791060 },
+    { url = "https://files.pythonhosted.org/packages/12/fa/1e52a8ae0e96e5ad17505ba1c8273f8a70296f37ca263cbf2ef9f9e07b39/OpenTimelineIO-0.17.0-cp312-cp312-win32.whl", hash = "sha256:9872ab74a20bb2bb3a50af04e80fe9238998d67d6be4e30e45aebe25d3eefac6", size = 522938 },
+    { url = "https://files.pythonhosted.org/packages/9f/47/7efd78fc12d372b1f1f263b4ca605dc88e8239da7ba8c0b5ff51519bb752/OpenTimelineIO-0.17.0-cp312-cp312-win_amd64.whl", hash = "sha256:c83b78be3312d3152d7e07ab32b0086fe220acc2a5b035b70ad69a787c0ece62", size = 603278 },
+]
+
+[[package]]
 name = "osxmetadata"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3288,6 +3308,7 @@ dependencies = [
     { name = "manim" },
     { name = "mcp" },
     { name = "numpy" },
+    { name = "opentimelineio" },
     { name = "osxphotos" },
     { name = "pillow" },
     { name = "requests" },
@@ -3313,6 +3334,7 @@ requires-dist = [
     { name = "manim", specifier = ">=0.18.1" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "numpy", specifier = ">=2.2.2" },
+    { name = "opentimelineio", specifier = ">=0.17.0" },
     { name = "osxphotos", specifier = ">=0.69.2" },
     { name = "pillow", specifier = ">=11.0.0" },
     { name = "requests", specifier = ">=2.32.3" },
