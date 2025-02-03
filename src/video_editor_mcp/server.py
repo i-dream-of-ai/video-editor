@@ -583,7 +583,7 @@ async def handle_call_tool(
         # query_img = arguments.get("query_img")
         limit = arguments.get("limit", 10)
         project_id = arguments.get("project_id")
-        tags = arguments.get("tags", [])
+        tags = arguments.get("tags", None)
         duration_min = arguments.get("duration_min", None)
         duration_max = arguments.get("duration_max", None)
         created_after = arguments.get("created_after", None)
@@ -592,26 +592,38 @@ async def handle_call_tool(
         include_related = arguments.get("include_related", False)
 
         # Validate that at least one query type is provided
-        if not any([query]) and not tags:
+        if not query and not tags:
             raise ValueError("At least one query or tag must be provided")
 
         # Perform the main search with all parameters
-        search_params = {
-            "limit": limit,
-            "include_segments": include_segments,
-            "include_related": include_related,
-            "tags": json.loads(tags),
-            "duration_min": duration_min,
-            "duration_max": duration_max,
-            "created_after": created_after,
-            "created_before": created_before,
-        }
+        if tags:
+            search_params = {
+                "limit": limit,
+                "include_segments": include_segments,
+                "include_related": include_related,
+                "tags": json.loads(tags),
+                "duration_min": duration_min,
+                "duration_max": duration_max,
+                "created_after": created_after,
+                "created_before": created_before,
+            }
+        else:
+            search_params = {
+                "limit": limit,
+                "include_segments": include_segments,
+                "include_related": include_related,
+                "duration_min": duration_min,
+                "duration_max": duration_max,
+                "created_after": created_after,
+                "created_before": created_before,
+            }
 
         # Add optional parameters
         if query:
             search_params["query"] = query
         if project_id:
             search_params["project_id"] = project_id
+        videos = []
 
         if query:
             embeddings = model_loader.encode_text(query)
@@ -630,11 +642,8 @@ async def handle_call_tool(
             videos = response.json()
             embedding_search_response = [format_single_video(video) for video in videos]
 
-        if videos:
-            logging.info(f"{videos[0]}")
-
         # Format response based on number of results
-        if len(videos) <= 3:
+        if len(videos) <= 3 and len(videos) >= 1:
             return [
                 types.TextContent(
                     type="text",
