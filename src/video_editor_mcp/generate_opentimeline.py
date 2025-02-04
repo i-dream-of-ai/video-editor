@@ -61,7 +61,7 @@ def create_otio_timeline(
         print(lf)
         logging.info(f"Downloaded video to {lf}")
         clip = otio.schema.Clip(
-            name=f"clip_{cut['video_id']}",
+            name=f"clip_{edit_spec['edit_name']}",
             media_reference=otio.schema.ExternalReference(
                 target_url=os.path.abspath(local_file)
             ),
@@ -69,7 +69,7 @@ def create_otio_timeline(
         )
         track.append(clip)
 
-    otio.adapters.write_to_file(timeline, f"{filename}.otio")
+    otio.adapters.write_to_file(timeline, filename)
 
 
 if __name__ == "__main__":
