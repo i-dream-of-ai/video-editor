@@ -1,0 +1,46 @@
+{
+    "edit": [
+        {
+            "video_id": "86f37f08-98fa-4bb2-bb75-e164276c1933",
+            "video_end_time": "00:00:20",
+            "video_start_time": "00:00:10"
+        },
+        {
+            "video_id": "814233f0-7a3a-4e40-90e6-f093be4c44b7",
+            "video_end_time": "00:00:25",
+            "video_start_time": "00:00:15"
+        },
+        {
+            "video_id": "04c78873-5dba-4bbc-8ba0-2f43b57fee4c",
+            "video_end_time": "00:00:30",
+            "video_start_time": "00:00:20"
+        },
+        {
+            "video_id": "b292d015-230a-42a8-bce7-8fdd0838623d",
+            "video_end_time": "00:00:25",
+            "video_start_time": "00:00:15"
+        },
+        {
+            "video_id": "928f5627-d20b-49cd-bace-377a528b5486",
+            "video_end_time": "00:00:15",
+            "video_start_time": "00:00:05"
+        },
+        {
+            "video_id": "52ac445f-cc60-40b3-b228-7d426150fb7e",
+            "video_end_time": "00:00:33",
+            "video_start_time": "00:00:23"
+        },
+        {
+            "video_id": "424289e9-e2f2-4c2c-9f84-8bef7827470d",
+            "video_end_time": "00:00:20",
+            "video_start_time": "00:00:10"
+        },
+        {
+            "video_id": "1ab8002b-2a94-4ffe-88f0-2cacb56e3ffe",
+            "video_end_time": "00:00:15",
+            "video_start_time": "00:00:05"
+        }
+    ],
+    "project_id": "612afec9-bcb2-47ca-807b-756d6e83b4b7",
+    "resolution": "1080p"
+}
