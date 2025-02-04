@@ -37,7 +37,7 @@ class VideoPlayerDelegate: NSObject, NSApplicationDelegate {
         // Parse arguments into video entries
         let args = Array(CommandLine.arguments.dropFirst())
         if args.count % 2 != 0 {
-            print("Error: Each video must have a name")
+            //print("Error: Each video must have a name")
             NSApplication.shared.terminate(nil)
             return
         }
@@ -112,18 +112,19 @@ class VideoPlayerDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Print controls
+        /*
         print("Controls:")
         print("Space: Play/Pause")
         print("Left Arrow: Seek backward 10 seconds")
         print("Right Arrow: Seek forward 10 seconds")
         print("N: Next video")
         print("P: Previous video")
-        print("Q: Quit")
+        print("Q: Quit")*/
     }
     
     func playCurrentVideo() {
         guard currentVideoIndex >= 0 && currentVideoIndex < videos.count else {
-            print("Invalid video index")
+            //print("Invalid video index")
             return
         }
         
@@ -179,10 +180,10 @@ class VideoPlayerDelegate: NSObject, NSApplicationDelegate {
             // Toggle play/pause
             if queuePlayer.rate == 0 {
                 queuePlayer.play()
-                print("Playing")
+                //print("Playing")
             } else {
                 queuePlayer.pause()
-                print("Paused")
+                //print("Paused")
             }
             
         case String(Character(UnicodeScalar(NSLeftArrowFunctionKey)!)):
@@ -190,14 +191,14 @@ class VideoPlayerDelegate: NSObject, NSApplicationDelegate {
             let currentTime = queuePlayer.currentTime()
             let newTime = CMTimeAdd(currentTime, CMTime(seconds: -10, preferredTimescale: 1))
             queuePlayer.seek(to: newTime)
-            print("Seeking backward 10 seconds")
+            //print("Seeking backward 10 seconds")
             
         case String(Character(UnicodeScalar(NSRightArrowFunctionKey)!)):
             // Seek forward 10 seconds
             let currentTime = queuePlayer.currentTime()
             let newTime = CMTimeAdd(currentTime, CMTime(seconds: 10, preferredTimescale: 1))
             queuePlayer.seek(to: newTime)
-            print("Seeking forward 10 seconds")
+            //print("Seeking forward 10 seconds")
             
         case "n", "N":
             nextVideo()
