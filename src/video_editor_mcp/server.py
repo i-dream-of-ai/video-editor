@@ -783,6 +783,7 @@ async def handle_call_tool(
             json.dump(json_edit, f, indent=4)
 
         try:
+            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
             subprocess.Popen(
                 [
                     "uv",
@@ -793,7 +794,8 @@ async def handle_call_tool(
                     f"{project}.json",
                     "--output",
                     f"{project}.otio",
-                ]
+                ],
+                env=env_vars,
             )
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
