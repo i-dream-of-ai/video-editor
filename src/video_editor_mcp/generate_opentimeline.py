@@ -2,7 +2,9 @@ import opentimelineio as otio
 import opentimelineio.opentime as otio_time
 from videojungle import ApiClient
 import os
-
+import sys
+import json
+import argparse
 import logging
 
 logging.basicConfig(
@@ -69,6 +71,27 @@ def create_otio_timeline(edit_spec, download_dir="downloads") -> otio.schema.Tim
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", help="JSON file path")
+    parser.add_argument("--output", help="Output file path")
+    parser.add_argument("--json", type=json.loads, help="JSON string")
+    args = parser.parse_args()
+    spec = None
+    if args.json:
+        spec = args.json
+    elif args.file:
+        with open(args.file) as f:
+            spec = json.load(f)
+    elif not sys.stdin.isatty():  # Check if data is being piped
+        spec = json.load(sys.stdin)
+    else:
+        parser.print_help()
+        sys.exit(1)
+    if args.output:
+        output_file = args.output
+    else:
+        output_file = "output.otio"
+    """
     edit_spec = {
         "edit": [
             {
@@ -115,4 +138,5 @@ if __name__ == "__main__":
         "project_id": "612afec9-bcb2-47ca-807b-756d6e83b4b7",
         "resolution": "1080p",
     }
-    create_otio_timeline(edit_spec)
+    """
+    create_otio_timeline(spec, output_file)
