@@ -38,14 +38,16 @@ def create_rational_time(timecode, fps=24.0):
     return otio.opentime.RationalTime(frames, fps)
 
 
-def create_otio_timeline(edit_spec, download_dir="downloads") -> otio.schema.Timeline:
+def create_otio_timeline(
+    edit_spec, filename, download_dir="downloads"
+) -> otio.schema.Timeline:
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
     timeline = otio.schema.Timeline()
-    track = otio.schema.Track(name=edit_spec["project_id"])
+    track = otio.schema.Track(name=edit_spec["edit_name"])
     timeline.tracks.append(track)
 
-    for cut in edit_spec["edit"]:
+    for cut in edit_spec["video_series_sequential"]:
         video = vj.video_files.get(cut["video_id"])
         local_file = os.path.join(download_dir, f"{video.name}.mp4")
         os.makedirs(download_dir, exist_ok=True)
@@ -67,7 +69,7 @@ def create_otio_timeline(edit_spec, download_dir="downloads") -> otio.schema.Tim
         )
         track.append(clip)
 
-    otio.adapters.write_to_file(timeline, "output.otio")
+    otio.adapters.write_to_file(timeline, f"{filename}.otio")
 
 
 if __name__ == "__main__":

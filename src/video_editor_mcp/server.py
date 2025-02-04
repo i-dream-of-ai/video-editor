@@ -415,6 +415,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 "type": "object",
                 "properties": {
                     "project_id": {"type": "string"},
+                    "name": {"type": "string"},
                     "resolution": {"type": "string"},
                     "edit": {
                         "type": "array",
@@ -425,7 +426,7 @@ async def handle_list_tools() -> list[types.Tool]:
                         },
                     },
                 },
-                "required": ["edit", "project_id", "cuts"],
+                "required": ["edit", "cuts", "name"],
             },
         ),
         types.Tool(
@@ -709,6 +710,7 @@ async def handle_call_tool(
     if name == "generate-edit-from-videos" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")
+        name = arguments.get("name")
         resolution = arguments.get("resolution")
         created = False
 
@@ -720,7 +722,8 @@ async def handle_call_tool(
             raise ValueError("Missing project")
         if not resolution:
             resolution = "1080x1920"
-
+        if not name:
+            raise ValueError("Missing name for edit")
         if resolution == "1080p":
             resolution = "1920x1080"
         elif resolution == "720p":
@@ -756,6 +759,7 @@ async def handle_call_tool(
             "video_output_format": "mp4",
             "video_output_resolution": resolution,
             "video_output_fps": 60.0,
+            "edit_name": name,
             "video_output_filename": "output_video.mp4",
             "audio_overlay": [],  # TODO: add this back in
             "video_series_sequential": updated_edit,
@@ -775,8 +779,22 @@ async def handle_call_tool(
 
         edit = vj.projects.render_edit(project, json_edit)
 
-        # create_otio_timeline(json_edit) # create opentimeline edit
+        with open(f"{project}.json", "w") as f:
+            json.dump(json_edit, f, indent=4)
+
         try:
+            subprocess.Popen(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "./src/video_editor_mcp/generate_opentimeline.py",
+                    "--file",
+                    f"{project}.json",
+                    "--output",
+                    f"{project}.otio",
+                ]
+            )
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
             # don't block, because this might take a while
