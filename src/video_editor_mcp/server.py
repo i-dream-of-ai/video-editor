@@ -414,15 +414,24 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "project_id": {"type": "string"},
-                    "name": {"type": "string"},
-                    "resolution": {"type": "string"},
+                    "project_id": {"type": "string", "description": "Project ID"},
+                    "name": {"type": "string", "description": "Video Edit name"},
+                    "resolution": {
+                        "type": "string",
+                        "description": "Video resolution. Examples include '1080p', '720p'",
+                    },
                     "edit": {
                         "type": "array",
                         "cuts": {
-                            "video_id": "string",
-                            "video_start_time": "time",
-                            "video_end_time": "time",
+                            "video_id": {"type": "string", "description": "Video UUID"},
+                            "video_start_time": {
+                                "type": "string",
+                                "description": "Clip start time in 00:00:00.000 format",
+                            },
+                            "video_end_time": {
+                                "type": "string",
+                                "description": "Clip end time in 00:00:00.000 format",
+                            },
                         },
                     },
                 },
@@ -630,7 +639,7 @@ async def handle_call_tool(
 
         if query:
             embeddings = model_loader.encode_text(query)
-            logging.info(f"Embeddings are: {embeddings}")
+            # logging.info(f"Embeddings are: {embeddings}")
 
             response = model_loader.post_embeddings(
                 embeddings,
@@ -739,7 +748,9 @@ async def handle_call_tool(
 
         updated_edit = [
             {
-                **cut,
+                "video_id": cut["video_id"],
+                "video_start_time": cut["video_start_time"],
+                "video_end_time": cut["video_end_time"],
                 "type": "videofile",
                 "audio_levels": [
                     {
