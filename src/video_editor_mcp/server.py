@@ -544,7 +544,7 @@ def format_video_info(video):
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
             f"  Video manuscript: {script}"
             f"  Matching scenes: {joined_segments}"
-            f"  Generated description: {video.get('generated_descriptioon', 'N/A')}"
+            f"  Generated description: {video.get('video', 'N/A').get('generated_description', 'N/A')}"
         )
     except Exception as e:
         return f"Error formatting video: {str(e)}"
@@ -563,6 +563,7 @@ def format_video_info_long(video):
             f"- Video Id: {video.get('video_id', 'N/A')}\n"
             f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
+            f"  Generated description: {video.get('video', 'N/A').get('generated_description', 'N/A')}"
             f"  Video manuscript: {script}"
             f"  Matching times: {video.get('scene_changes', 'N/A')}"
         )
