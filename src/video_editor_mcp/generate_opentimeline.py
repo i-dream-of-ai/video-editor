@@ -58,7 +58,7 @@ def create_otio_timeline(
         fps = video.fps if video.fps else 24.0
         start_time = create_rational_time(cut["video_start_time"], fps)
         end_time = create_rational_time(cut["video_end_time"], fps)
-        print(lf)
+        # print(lf)
         logging.info(f"Downloaded video to {lf}")
         clip = otio.schema.Clip(
             name=f"clip_{edit_spec['edit_name']}",

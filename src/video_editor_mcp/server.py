@@ -435,7 +435,7 @@ async def handle_list_tools() -> list[types.Tool]:
                         },
                     },
                 },
-                "required": ["edit", "cuts", "name"],
+                "required": ["edit", "cuts", "name", "project_id"],
             },
         ),
         types.Tool(
@@ -514,6 +514,15 @@ def format_single_video(video):
     return readable_format
 
 
+def filter_unique_videos_keep_first(json_results):
+    seen = set()
+    return [
+        item
+        for item in json_results
+        if item["video_id"] not in seen and not seen.add(item["video_id"])
+    ]
+
+
 def format_video_info(video):
     try:
         if video.get("script") is not None:
@@ -523,11 +532,18 @@ def format_video_info(video):
                 script = video.get("script")
         else:
             script = "N/A"
+        segments = []
+        for segment in video.get("matching_segments", []):
+            segments.append(
+                f"- Time: {segment.get('start_seconds', 'N/A')} to {segment.get('end_seconds', 'N/A')}"
+            )
+        joined_segments = "\n".join(segments)
         return (
             f"- Video Id: {video.get('video_id', 'N/A')}\n"
             f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
             f"  Video manuscript: {script}"
+            f"  Matching scenes: {joined_segments}"
             f"  Generated description: {video.get('generated_descriptioon', 'N/A')}"
         )
     except Exception as e:
@@ -543,13 +559,12 @@ def format_video_info_long(video):
                 script = video.get("script")
         else:
             script = "N/A"
-
         return (
             f"- Video Id: {video.get('video_id', 'N/A')}\n"
             f"  Video name: {video.get('video', {}).get('name', 'N/A')}\n"
             f"  URL to view video: {video.get('video', {}).get('url', 'N/A')}\n"
             f"  Video manuscript: {script}"
-            f"  Video scenes: {video.get('scene_changes', 'N/A')}"
+            f"  Matching times: {video.get('scene_changes', 'N/A')}"
         )
     except Exception as e:
         return f"Error formatting video: {str(e)}"
@@ -669,15 +684,15 @@ async def handle_call_tool(
 
         # Combine embedding search results and regular search results
         response_text = []
+        response_text.append(f"Number of Videos Returned: {len(videos)}")
+        response_text.extend(format_video_info(video) for video in videos)
 
         if query:  # Only include embedding search results if text query was used
             response_text.append(
                 f"Number of embedding search results: {len(embedding_search_response)}"
             )
             response_text.extend(embedding_search_response)
-
-        response_text.append(f"Number of Videos Returned: {len(videos)}")
-        response_text.extend(format_video_info(video) for video in videos)
+        logging.info(f"Videos returned are {videos}")
 
         return [
             types.TextContent(
