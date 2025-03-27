@@ -311,7 +311,7 @@ async def handle_list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="add-video",
-            description="Upload video from URL",
+            description="Upload video from URL. Begins analysis of video to allow for later information retrieval for automatic video editing an search.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -323,7 +323,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="search-remote-videos",
-            description="Search remote videos hosted on Video Jungle by query",
+            description="Default method to search videos hosted on Video Jungle by a query",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -391,7 +391,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="search-local-videos",
-            description="Search local videos in Photos app by keyword",
+            description="Search user's local videos in Photos app by keyword",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -410,12 +410,16 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="generate-edit-from-videos",
-            description="Generate an edit from videos",
+            description="Generate an edit from videos, from within a specific project. Creates a new project to work within no existing project ID (UUID) is passed ",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "project_id": {"type": "string", "description": "Project ID"},
                     "name": {"type": "string", "description": "Video Edit name"},
+                    "open_editor": {
+                        "type": "boolean",
+                        "description": "Open a live editor with the project's edit",
+                    },
                     "resolution": {
                         "type": "string",
                         "description": "Video resolution. Examples include '1080p', '720p'",
@@ -440,7 +444,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="generate-edit-from-single-video",
-            description="Generate a video edit from a single video",
+            description="Generate a compressed video edit from a single video.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -736,10 +740,13 @@ async def handle_call_tool(
         edit = arguments.get("edit")
         project = arguments.get("project_id")
         name = arguments.get("name")
+        open_editor = arguments.get("open_editor")
         resolution = arguments.get("resolution")
         created = False
 
         logging.info(f"edit is: {edit} and the type is: {type(edit)}")
+        if open_editor is None:
+            open_editor = True
 
         if not edit:
             raise ValueError("Missing edit")
