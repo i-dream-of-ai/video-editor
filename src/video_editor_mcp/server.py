@@ -5,6 +5,7 @@ import sys
 import threading
 from typing import List, Optional, Union, Any
 import json
+import webbrowser
 
 import mcp.server.stdio
 import mcp.types as types
@@ -414,7 +415,10 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "project_id": {"type": "string", "description": "Project ID"},
+                    "project_id": {
+                        "type": "string",
+                        "description": "Either an existing Project UUID or String. A UUID puts the edit in an existing project, and a string creates a new project with that name.",
+                    },
                     "name": {"type": "string", "description": "Video Edit name"},
                     "open_editor": {
                         "type": "boolean",
@@ -422,7 +426,7 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                     "resolution": {
                         "type": "string",
-                        "description": "Video resolution. Examples include '1080p', '720p'",
+                        "description": "Video resolution. Examples include '1920x1080', '1280x720'",
                     },
                     "edit": {
                         "type": "array",
@@ -777,7 +781,7 @@ async def handle_call_tool(
                 "type": "videofile",
                 "audio_levels": [
                     {
-                        "audio_level": "0.5",
+                        "audio_level": 0.5,
                         "start_time": cut["video_start_time"],
                         "end_time": cut["video_end_time"],
                     }
@@ -793,10 +797,11 @@ async def handle_call_tool(
             "video_output_format": "mp4",
             "video_output_resolution": resolution,
             "video_output_fps": 60.0,
-            "edit_name": name,
+            "name": name,
             "video_output_filename": "output_video.mp4",
             "audio_overlay": [],  # TODO: add this back in
             "video_series_sequential": updated_edit,
+            "skip_rendering": True,
         }
 
         try:
@@ -816,6 +821,11 @@ async def handle_call_tool(
         with open(f"{project}.json", "w") as f:
             json.dump(json_edit, f, indent=4)
 
+        webbrowser.open(
+            f"https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}"
+        )
+        # the following generates an edit for opentimeline, allowing you to open it in
+        # a desktop video editor like final cut pro, etc.
         try:
             env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
             subprocess.Popen(
@@ -900,14 +910,8 @@ async def handle_call_tool(
                     "video_id": video_id,
                     "video_start_time": cut["video_start_time"],
                     "video_end_time": cut["video_end_time"],
-                    "type": "videofile",
-                    "audio_levels": [
-                        {
-                            "audio_level": "0.5",
-                            "start_time": cut["video_start_time"],
-                            "end_time": cut["video_end_time"],
-                        }
-                    ],
+                    "type": "video-file",
+                    "audio_levels": [],
                 }
                 for cut in edit
             ]
@@ -936,8 +940,10 @@ async def handle_call_tool(
             created = True
 
         logging.info(f"video edit is: {json_edit}")
-
-        edit = vj.projects.render_edit(project, json_edit)
+        try:
+            edit = vj.projects.render_edit(project, json_edit)
+        except Exception as e:
+            logging.error(f"Error rendering edit: {e}")
         logging.info(f"edit is: {edit}")
         try:
             os.chdir("./tools")
