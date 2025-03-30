@@ -159,6 +159,7 @@ tools = [
     "create-video-bar-chart-from-two-axis-data",
     "create-video-line-chart-from-two-axis-data",
     "generate-edit-from-single-video",
+    # "update-video-edit", # not until we're actually ready
 ]
 
 
@@ -464,6 +465,70 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                 },
                 "required": ["edit", "project_id", "video_id", "cuts"],
+            },
+        ),
+        types.Tool(
+            name="update-video-edit",
+            description="Update an existing video edit within a specific project.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_id": {
+                        "type": "string",
+                        "description": "UUID of the project containing the edit",
+                    },
+                    "edit_id": {
+                        "type": "string",
+                        "description": "UUID of the video edit to update",
+                    },
+                    "name": {"type": "string", "description": "Video Edit name"},
+                    "description": {
+                        "type": "string",
+                        "description": "Description of the video edit",
+                    },
+                    "video_output_format": {
+                        "type": "string",
+                        "description": "Output format for the video (e.g., 'mp4', 'webm')",
+                    },
+                    "video_output_resolution": {
+                        "type": "string",
+                        "description": "Video resolution. Examples include '1920x1080', '1280x720'",
+                    },
+                    "video_output_fps": {
+                        "type": "number",
+                        "description": "Frames per second for the output video",
+                    },
+                    "video_series_sequential": {
+                        "type": "array",
+                        "description": "Array of video clips in sequential order",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "video_id": {
+                                    "type": "string",
+                                    "description": "Video UUID",
+                                },
+                                "video_start_time": {
+                                    "type": "string",
+                                    "description": "Clip start time in 00:00:00.000 format",
+                                },
+                                "video_end_time": {
+                                    "type": "string",
+                                    "description": "Clip end time in 00:00:00.000 format",
+                                },
+                            },
+                        },
+                    },
+                    "audio_overlay": {
+                        "type": "object",
+                        "description": "Audio overlay settings and assets",
+                    },
+                    "rendered": {
+                        "type": "boolean",
+                        "description": "Whether the edit has been rendered",
+                    },
+                },
+                "required": ["project_id", "edit_id"],
             },
         ),
         types.Tool(
@@ -867,14 +932,14 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} and created edit {edit} with raw edit info: {updated_edit}",
+                    text=f"Created new project {proj.name} with id '{proj.id}' and created edit {edit} with raw edit info: {updated_edit}",
                 )
             ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in existing project {proj.name} with generated asset info: {edit} and raw edit info: {updated_edit}",
+                text=f"Generated edit in existing project {proj.name} with id '{proj.id}' with generated asset info: {edit} and raw edit info: {updated_edit}",
             )
         ]
     if name == "generate-edit-from-single-video" and arguments:
@@ -972,14 +1037,14 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} with raw edit info: {edit}",
+                    text=f"Created new project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
                 )
             ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in project {proj.name} with raw edit info: {edit}",
+                text=f"Generated edit in project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
             )
         ]
 
