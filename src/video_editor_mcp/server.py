@@ -31,6 +31,7 @@ else:
     except Exception:
         VJ_API_KEY = None
 
+BROWSER_OPEN = False
 # Configure the logging
 logging.basicConfig(
     filename="app.log",  # Name of the log file
@@ -159,7 +160,7 @@ tools = [
     "create-video-bar-chart-from-two-axis-data",
     "create-video-line-chart-from-two-axis-data",
     "generate-edit-from-single-video",
-    # "update-video-edit", # not until we're actually ready
+    "update-video-edit",  # not until we're actually ready
 ]
 
 
@@ -889,6 +890,8 @@ async def handle_call_tool(
         webbrowser.open(
             f"https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}"
         )
+        global BROWSER_OPEN
+        BROWSER_OPEN = True
         # the following generates an edit for opentimeline, allowing you to open it in
         # a desktop video editor like final cut pro, etc.
         try:
@@ -1045,6 +1048,122 @@ async def handle_call_tool(
             types.TextContent(
                 type="text",
                 text=f"Generated edit in project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
+            )
+        ]
+
+    if name == "update-video-edit" and arguments:
+        project_id = arguments.get("project_id")
+        edit_id = arguments.get("edit_id")
+        edit_name = arguments.get("name")
+        description = arguments.get("description")
+        video_output_format = arguments.get("video_output_format")
+        video_output_resolution = arguments.get("video_output_resolution")
+        video_output_fps = arguments.get("video_output_fps")
+        video_series_sequential = arguments.get("video_series_sequential")
+        audio_overlay = arguments.get("audio_overlay")
+        rendered = arguments.get("rendered")
+
+        # Validate required parameters
+        if not project_id:
+            raise ValueError("Missing project_id")
+        if not edit_id:
+            raise ValueError("Missing edit_id")
+
+        # Process resolution format like in create function
+        if video_output_resolution:
+            if video_output_resolution == "1080p":
+                video_output_resolution = "1920x1080"
+            elif video_output_resolution == "720p":
+                video_output_resolution = "1280x720"
+
+            # Validate resolution format
+            try:
+                w, h = video_output_resolution.split("x")
+                _ = f"{int(w)}x{int(h)}"
+            except Exception as e:
+                raise ValueError(
+                    f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
+                )
+
+        # Try to get the existing project
+        try:
+            proj = vj.projects.get(project_id)
+        except Exception as e:
+            raise ValueError(f"Project with ID {project_id} not found: {e}")
+
+        # Try to get the existing edit
+        try:
+            existing_edit = vj.projects.get_edit(project_id, edit_id)
+        except Exception as e:
+            raise ValueError(
+                f"Edit with ID {edit_id} not found in project {project_id}: {e}"
+            )
+
+        # Process video clips if provided
+        updated_video_series = None
+        if video_series_sequential:
+            updated_video_series = [
+                {
+                    "video_id": clip["video_id"],
+                    "video_start_time": clip["video_start_time"],
+                    "video_end_time": clip["video_end_time"],
+                    "type": "videofile",
+                    "audio_levels": [
+                        {
+                            "audio_level": 0.5,
+                            "start_time": clip["video_start_time"],
+                            "end_time": clip["video_end_time"],
+                        }
+                    ],
+                }
+                for clip in video_series_sequential
+            ]
+
+        # Create an empty dictionary without type annotations
+        update_json = dict()
+
+        # Add fields one by one with explicit type handling
+        update_json["video_edit_version"] = "1.0"
+
+        if edit_name:
+            update_json["name"] = edit_name
+        if description:
+            update_json["description"] = description
+        if video_output_format:
+            update_json["video_output_format"] = video_output_format
+        if video_output_resolution:
+            update_json["video_output_resolution"] = video_output_resolution
+        if video_output_fps is not None:
+            update_json["video_output_fps"] = float(video_output_fps)
+        if updated_video_series is not None:
+            # Cast to a list to ensure proper typing
+            update_json["video_series_sequential"] = list(updated_video_series)
+        if audio_overlay is not None:
+            # Cast to a list to ensure proper typing
+            update_json["audio_overlay"] = list(audio_overlay) if audio_overlay else []
+
+        # Skip rendering by default like in create function
+        update_json["skip_rendering"] = bool(True)
+
+        # If rendering is explicitly requested
+        if rendered is True:
+            update_json["skip_rendering"] = bool(False)
+
+        logging.info(f"Updating edit {edit_id} with: {update_json}")
+
+        # Call the API to update the edit
+        updated_edit = vj.projects.update_edit(project_id, edit_id, update_json)
+
+        # Optionally open the browser to the updated edit
+        if not BROWSER_OPEN:
+            webbrowser.open(
+                f"https://app.video-jungle.com/projects/{project_id}/edits/{edit_id}"
+            )
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Updated edit {edit_id} in project {proj.name} with changes: {update_json}",
             )
         ]
 
