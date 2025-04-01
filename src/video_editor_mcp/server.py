@@ -326,7 +326,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="search-remote-videos",
-            description="Default method to search videos hosted on Video Jungle by a query",
+            description="Default method to search videos. Will return videos including video_ids, which allow for information retrieval and building video edits.",
             inputSchema={
                 "type": "object",
                 "properties": {
