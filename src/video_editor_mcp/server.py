@@ -159,8 +159,9 @@ tools = [
     "generate-edit-from-videos",
     "create-video-bar-chart-from-two-axis-data",
     "create-video-line-chart-from-two-axis-data",
+    "edit-locally",
     "generate-edit-from-single-video",
-    "update-video-edit",  # not until we're actually ready
+    "update-video-edit",
 ]
 
 
@@ -312,6 +313,24 @@ async def handle_list_tools() -> list[types.Tool]:
     Each tool specifies its arguments using JSON Schema validation.
     """
     return [
+        types.Tool(
+            name="edit-locally",
+            description="Create an OpenTimelineIO file for local editing with the user's desktop video editing suite.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "edit_id": {
+                        "type": "string",
+                        "description": "UUID of the edit to download",
+                    },
+                    "project_id": {
+                        "type": "string",
+                        "description": "UUID of the project the video edit lives within",
+                    },
+                },
+                "required": ["edit_id", "project_id"],
+            },
+        ),
         types.Tool(
             name="add-video",
             description="Upload video from URL. Begins analysis of video to allow for later information retrieval for automatic video editing an search.",
@@ -659,15 +678,45 @@ async def handle_call_tool(
     if not arguments:
         raise ValueError("Missing arguments")
 
+    if name == "edit-locally" and arguments:
+        project_id = arguments.get("project_id")
+        edit_id = arguments.get("edit_id")
+
+        if not project_id or not edit_id:
+            raise ValueError("Missing edit and / or  project id")
+        env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
+        edit_data = vj.projects.get_edit(project_id, edit_id)
+        with open(f"{edit_data['name']}.json", "w") as f:
+            json.dump(edit_data, f, indent=4)
+        logging.info(f"edit data is: {edit_data}")
+        subprocess.Popen(
+            [
+                "uv",
+                "run",
+                "python",
+                "-",
+                "--file",
+                f"{edit_data['name']}.json",
+                "--output",
+                f"{edit_data['name']}.otio",
+            ],
+            env=env_vars,
+        )
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Edit {edit_data['name']} is being downloaded and converted to OpenTimelineIO format. You can find it in the current directory.",
+            )
+        ]
+
     if name == "add-video" and arguments:
-        name = arguments.get("name")
+        name = arguments.get("name")  # type: ignore
         url = arguments.get("url")
 
         if not name or not url:
             raise ValueError("Missing name or content")
 
         # Update server state
-
         vj.video_files.create(name=name, filename=str(url), upload_method="url")
 
         # Notify clients that resources have changed
@@ -809,7 +858,7 @@ async def handle_call_tool(
     if name == "generate-edit-from-videos" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")
-        name = arguments.get("name")
+        name = arguments.get("name")  # type: ignore
         open_editor = arguments.get("open_editor")
         resolution = arguments.get("resolution")
         created = False
@@ -895,20 +944,6 @@ async def handle_call_tool(
         # the following generates an edit for opentimeline, allowing you to open it in
         # a desktop video editor like final cut pro, etc.
         try:
-            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
-            subprocess.Popen(
-                [
-                    "uv",
-                    "run",
-                    "python",
-                    "./src/video_editor_mcp/generate_opentimeline.py",
-                    "--file",
-                    f"{project}.json",
-                    "--output",
-                    f"{project}.otio",
-                ],
-                env=env_vars,
-            )
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
             # don't block, because this might take a while
@@ -945,6 +980,7 @@ async def handle_call_tool(
                 text=f"Generated edit in existing project {proj.name} with id '{proj.id}' with generated asset info: {edit} and raw edit info: {updated_edit}",
             )
         ]
+
     if name == "generate-edit-from-single-video" and arguments:
         edit = arguments.get("edit")
         project = arguments.get("project_id")

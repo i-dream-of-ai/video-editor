@@ -6,6 +6,7 @@ import sys
 import json
 import argparse
 import logging
+import subprocess
 
 logging.basicConfig(
     filename="app.log",  # Name of the log file
@@ -44,10 +45,11 @@ def create_otio_timeline(
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
     timeline = otio.schema.Timeline()
-    track = otio.schema.Track(name=edit_spec["edit_name"])
+    track = otio.schema.Track(name=edit_spec["name"])
     timeline.tracks.append(track)
 
     for cut in edit_spec["video_series_sequential"]:
+        # TODO: fix with asset call too
         video = vj.video_files.get(cut["video_id"])
         local_file = os.path.join(download_dir, f"{video.name}.mp4")
         os.makedirs(download_dir, exist_ok=True)
@@ -61,7 +63,7 @@ def create_otio_timeline(
         # print(lf)
         logging.info(f"Downloaded video to {lf}")
         clip = otio.schema.Clip(
-            name=f"clip_{edit_spec['edit_name']}",
+            name=f"clip_{edit_spec['name']}",
             media_reference=otio.schema.ExternalReference(
                 target_url=os.path.abspath(local_file)
             ),
@@ -70,6 +72,8 @@ def create_otio_timeline(
         track.append(clip)
 
     otio.adapters.write_to_file(timeline, filename)
+    # open the directory afterwards
+    subprocess.call(["open", "."])
 
 
 if __name__ == "__main__":
@@ -94,51 +98,6 @@ if __name__ == "__main__":
     else:
         output_file = "output.otio"
     """
-    edit_spec = {
-        "edit": [
-            {
-                "video_id": "86f37f08-98fa-4bb2-bb75-e164276c1933",
-                "video_end_time": "00:00:20",
-                "video_start_time": "00:00:10",
-            },
-            {
-                "video_id": "814233f0-7a3a-4e40-90e6-f093be4c44b7",
-                "video_end_time": "00:00:25",
-                "video_start_time": "00:00:15",
-            },
-            {
-                "video_id": "04c78873-5dba-4bbc-8ba0-2f43b57fee4c",
-                "video_end_time": "00:00:30",
-                "video_start_time": "00:00:20",
-            },
-            {
-                "video_id": "b292d015-230a-42a8-bce7-8fdd0838623d",
-                "video_end_time": "00:00:25",
-                "video_start_time": "00:00:15",
-            },
-            {
-                "video_id": "928f5627-d20b-49cd-bace-377a528b5486",
-                "video_end_time": "00:00:15",
-                "video_start_time": "00:00:05",
-            },
-            {
-                "video_id": "52ac445f-cc60-40b3-b228-7d426150fb7e",
-                "video_end_time": "00:00:33",
-                "video_start_time": "00:00:23",
-            },
-            {
-                "video_id": "424289e9-e2f2-4c2c-9f84-8bef7827470d",
-                "video_end_time": "00:00:20",
-                "video_start_time": "00:00:10",
-            },
-            {
-                "video_id": "1ab8002b-2a94-4ffe-88f0-2cacb56e3ffe",
-                "video_end_time": "00:00:15",
-                "video_start_time": "00:00:05",
-            },
-        ],
-        "project_id": "612afec9-bcb2-47ca-807b-756d6e83b4b7",
-        "resolution": "1080p",
-    }
+    Spec was laughably wrong, need to fix.
     """
     create_otio_timeline(spec, output_file)
