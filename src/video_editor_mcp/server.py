@@ -689,6 +689,7 @@ async def handle_call_tool(
         with open(f"{edit_data['name']}.json", "w") as f:
             json.dump(edit_data, f, indent=4)
         logging.info(f"edit data is: {edit_data}")
+        formatted_name = edit_data["name"].replace(" ", "-")
         subprocess.Popen(
             [
                 "uv",
@@ -696,9 +697,9 @@ async def handle_call_tool(
                 "python",
                 "-",
                 "--file",
-                f"{edit_data['name']}.json",
+                f"{formatted_name}.json",
                 "--output",
-                f"{edit_data['name']}.otio",
+                f"{formatted_name}.otio",
             ],
             env=env_vars,
         )
