@@ -1,6 +1,6 @@
 # Video Editor MCP server
 
-[![Video Jungle MCP Server](./assets/create-edit.png)](https://www.video-jungle.com)
+[[![Video Jungle MCP Server](./assets/create-edit.png)](https://www.video-jungle.com)](https://www.youtube.com/watch?v=KG6TMLD8GmA)
 
 Upload, edit, search, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
