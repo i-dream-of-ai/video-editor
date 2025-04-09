@@ -1,7 +1,8 @@
 # Video Editor MCP server
 
-[[![Video Jungle MCP Server](./assets/create-edit.png)](https://www.video-jungle.com)](https://www.youtube.com/watch?v=KG6TMLD8GmA)
+[![Video Jungle MCP Server](./assets/create-edit.png)](https://www.video-jungle.com)
 
+See a demo here: [https://www.youtube.com/watch?v=KG6TMLD8GmA](https://www.youtube.com/watch?v=KG6TMLD8GmA)
 Upload, edit, search, and generate videos from everyone's favorite LLM and [Video Jungle](https://www.video-jungle.com/).
 
 You'll need to sign up for an account at [Video Jungle](https://app.video-jungle.com/register) in order to use this tool, and add your API key.
