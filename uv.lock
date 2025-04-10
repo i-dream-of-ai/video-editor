@@ -3342,7 +3342,7 @@ requires-dist = [
     { name = "timm", specifier = ">=1.0.12" },
     { name = "torch", specifier = ">=2.5.1" },
     { name = "transformers", specifier = ">=4.47.1" },
-    { name = "videojungle", specifier = ">=0.1.46" },
+    { name = "videojungle", specifier = ">=0.1.47" },
 ]
 
 [package.metadata.requires-dev]
@@ -3356,16 +3356,16 @@ dev = [
 
 [[package]]
 name = "videojungle"
-version = "0.1.46"
+version = "0.1.47"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/40/fd55409d04bd7712cd31c3c890673424ddd7614e798e80c2ec05ca1d07fd/videojungle-0.1.46.tar.gz", hash = "sha256:1f6f9af46e645889cc9f907d38d5877ac708a324bae28b24f06402e98b942e6b", size = 9706 }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/3a/529f1efe723819606555f5e628d6f06727e0dc2734331b6330da80062ac6/videojungle-0.1.47.tar.gz", hash = "sha256:6b9e9d76bab2a1b7e3dc02414178a7683f833a9a7bd570266eb9299b53769dcf", size = 9751 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/8c/f9b5ef973dded3c3acd3d840cce5dc602799cb1cb5259a505ffdf634696e/videojungle-0.1.46-py3-none-any.whl", hash = "sha256:5032a654bb060a3595e1f5ad21ef5583301e2407ca2d6e71d33758fa63c20bfa", size = 9273 },
+    { url = "https://files.pythonhosted.org/packages/85/ac/6ead6dceb827ba507f813ef88d547fedff1cc3d31248ed74906cc841afda/videojungle-0.1.47-py3-none-any.whl", hash = "sha256:58677e5e954577fd4724df59f3548fa268d5bde0b94d446a3cd2129c99c691d5", size = 9311 },
 ]
 
 [[package]]
