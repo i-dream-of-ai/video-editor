@@ -145,9 +145,10 @@ model_loader = EmbeddingModelLoader()
 server = Server("video-jungle-mcp")
 
 try:
-    videos_at_start = vj.video_files.list()
+    # videos_at_start = vj.video_files.list()
+    projects_at_start = vj.projects.list()
 except Exception as e:
-    logging.error(f"Error getting videos at start: {e}")
+    logging.error(f"Error getting projects at start: {e}")
     videos_at_start = []
 
 counter = 10
@@ -206,13 +207,14 @@ async def handle_list_resources() -> list[types.Resource]:
     List available video files.
     Each video files is available at a specific url
     """
-    global counter, videos_at_start
+    global counter, projects_at_start
     counter += 1
-    """
-    if counter % 10 == 0:
-        videos = vj.video_files.list()
-        videos_at_start = videos
+
+    if counter % 100 == 0:
+        projects = vj.projects.list()
+        projects_at_start = projects
         counter = 0
+    """
     videos = [
         types.Resource(
             uri=AnyUrl(f"vj://video-file/{video.id}"),
@@ -221,18 +223,19 @@ async def handle_list_resources() -> list[types.Resource]:
             mimeType="video/mp4",
         )
         for video in videos_at_start
-    ]
+    ]"""
+
     projects = [
         types.Resource(
-            uri=AnyUrl(f"vj://project/{project.id}"),
+            uri=AnyUrl(f"vj://projects/{project.id}"),
             name=f"Video Jungle Project: {project.name}",
             description=f"Project description: {project.description}",
             mimeType="application/json",
         )
-        for project in projects
-    ]"""
+        for project in projects_at_start
+    ]
 
-    return []  # videos  # + projects
+    return projects  # videos  # + projects
 
 
 @server.read_resource()
@@ -246,11 +249,11 @@ async def handle_read_resource(uri: AnyUrl) -> str:
 
     id = uri.path
     if id is not None:
-        id = id.lstrip("/video-file/")
-        video = vj.video_files.get(id)
-        logging.info(f"video is: {video}")
-        return video.model_dump_json()
-    raise ValueError(f"Video not found: {id}")
+        id = id.lstrip("/projects/")
+        proj = vj.projects.get(id)
+        logging.info(f"project is: {proj}")
+        return proj.model_dump_json()
+    raise ValueError(f"Project not found: {id}")
 
 
 @server.list_prompts()
