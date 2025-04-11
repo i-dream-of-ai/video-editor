@@ -1,13 +1,13 @@
 [project]
 name = "video-editor-mcp"
-version = "0.1.14"
+version = "0.1.15"
 description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
  "einops>=0.8.0",
  "manim>=0.18.1",
- "mcp>=1.0.0",
+ "mcp>=1.6.0",
  "numpy>=2.2.2",
  "opentimelineio>=0.17.0",
  "osxphotos>=0.69.2",
@@ -36,7 +36,7 @@ members = ["tools"]
 dev = [
     "ipykernel>=6.29.5",
     "manim>=0.18.1",
-    "mcp[cli]===1.2.0rc1",
+    "mcp[cli]>=1.6.0",
     "pre-commit>=4.0.1",
     "ruff>=0.8.4",
 ]

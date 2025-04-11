@@ -931,7 +931,7 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "1.2.0rc1"
+version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -943,9 +943,9 @@ dependencies = [
     { name = "starlette" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3c/ba/42269d2e87e8ed1920364fdc68a8623701ddf8288de148b21ef3f26aa6df/mcp-1.2.0rc1.tar.gz", hash = "sha256:44dda64e7e61c85884cdc0b3686e8a6dfb1a014d10c4bd35914eba2f24306586", size = 99529 }
+sdist = { url = "https://files.pythonhosted.org/packages/95/d2/f587cb965a56e992634bebc8611c5b579af912b74e04eb9164bd49527d21/mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723", size = 200031 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/d4/3af43558260e2cc7e084a04af41724931d66ae918fd232f5452d89eb2c8f/mcp-1.2.0rc1-py3-none-any.whl", hash = "sha256:4a9621b7625351fceb3cb518142be1f0a0be73db86375b87e7238e99eacbcce5", size = 66234 },
+    { url = "https://files.pythonhosted.org/packages/10/30/20a7f33b0b884a9d14dd3aa94ff1ac9da1479fe2ad66dd9e2736075d2506/mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0", size = 76077 },
 ]
 
 [package.optional-dependencies]
@@ -3301,7 +3301,7 @@ wheels = [
 
 [[package]]
 name = "video-editor-mcp"
-version = "0.1.14"
+version = "0.1.15"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
@@ -3332,7 +3332,7 @@ dev = [
 requires-dist = [
     { name = "einops", specifier = ">=0.8.0" },
     { name = "manim", specifier = ">=0.18.1" },
-    { name = "mcp", specifier = ">=1.0.0" },
+    { name = "mcp", specifier = ">=1.6.0" },
     { name = "numpy", specifier = ">=2.2.2" },
     { name = "opentimelineio", specifier = ">=0.17.0" },
     { name = "osxphotos", specifier = ">=0.69.2" },
@@ -3349,7 +3349,7 @@ requires-dist = [
 dev = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "manim", specifier = ">=0.18.1" },
-    { name = "mcp", extras = ["cli"], specifier = "===1.2.0rc1" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.6.0" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "ruff", specifier = ">=0.8.4" },
 ]
