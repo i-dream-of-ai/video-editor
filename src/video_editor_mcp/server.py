@@ -158,6 +158,7 @@ tools = [
     "search-local-videos",
     "search-remote-videos",
     "generate-edit-from-videos",
+    "create-videojungle-project",
     "create-video-bar-chart-from-two-axis-data",
     "create-video-line-chart-from-two-axis-data",
     "edit-locally",
@@ -210,6 +211,8 @@ async def handle_list_resources() -> list[types.Resource]:
     global counter, projects_at_start
     counter += 1
 
+    # We do this counter because otherwise Claude is very aggressive
+    # about requests
     if counter % 100 == 0:
         projects = vj.projects.list()
         projects_at_start = projects
@@ -316,6 +319,20 @@ async def handle_list_tools() -> list[types.Tool]:
     Each tool specifies its arguments using JSON Schema validation.
     """
     return [
+        types.Tool(
+            name="create-videojungle-project",
+            description="Create a new Video Jungle project to create video edits, add videos, assets, and more.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Name of the project"},
+                    "description": {
+                        "type": "string",
+                        "description": "Description of the project",
+                    },
+                },
+            },
+        ),
         types.Tool(
             name="edit-locally",
             description="Create an OpenTimelineIO file for local editing with the user's desktop video editing suite.",
@@ -680,6 +697,26 @@ async def handle_call_tool(
 
     if not arguments:
         raise ValueError("Missing arguments")
+
+    if name == "create-videojungle-project" and arguments:
+        namez = arguments.get("name")
+        description = arguments.get("description")
+
+        if not namez or not description:
+            raise ValueError("Missing project name")
+
+        # Create a new project
+        project = vj.projects.create(name=namez, description=description)
+
+        # Notify clients that resources have changed
+        await server.request_context.session.send_resource_list_changed()
+
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Created new project '{project.name}' with id '{project.id}'",
+            )
+        ]
 
     if name == "edit-locally" and arguments:
         project_id = arguments.get("project_id")
