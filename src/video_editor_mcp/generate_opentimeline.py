@@ -81,8 +81,31 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="JSON file path")
     parser.add_argument("--output", help="Output file path")
     parser.add_argument("--json", type=json.loads, help="JSON string")
+
     args = parser.parse_args()
     spec = None
+    # Set DaVinci Resolve environment variables
+    os.environ["RESOLVE_SCRIPT_API"] = (
+        "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting"
+    )
+    os.environ["RESOLVE_SCRIPT_LIB"] = (
+        "/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/Libraries/Fusion/fusionscript.so"
+    )
+
+    # Add Resolve's Python modules to the path
+    script_module_path = os.path.join(os.environ["RESOLVE_SCRIPT_API"], "Modules")
+    if script_module_path not in sys.path:
+        sys.path.append(script_module_path)
+
+    # Now import DaVinciResolveScript
+    try:
+        import DaVinciResolveScript as dvr_script
+    except ImportError as e:
+        # print(f"Error importing DaVinciResolveScript: {e}")
+        # print("Make sure DaVinci Resolve is installed correctly.")
+        # Re-raise the exception or set dvr_script to None as a fallback
+        dvr_script = None
+
     if args.json:
         spec = args.json
     elif args.file:
@@ -97,7 +120,17 @@ if __name__ == "__main__":
         output_file = args.output
     else:
         output_file = "output.otio"
-    """
-    Spec was laughably wrong, need to fix.
-    """
     create_otio_timeline(spec, output_file)
+    output_file_absolute = os.path.abspath(output_file)
+    if dvr_script:
+        resolve = dvr_script.scriptapp("Resolve")
+        if resolve:
+            project_manager = resolve.GetProjectManager()
+            project = project_manager.GetCurrentProject()
+            media_pool = project.GetMediaPool()
+            media_pool.ImportTimelineFromFile(
+                output_file_absolute, {"timelineName": spec["name"]}
+            )
+            logging.info(f"Imported {output_file} into DaVinci Resolve")
+        else:
+            logging.error("Could not connect to DaVinci Resolve.")

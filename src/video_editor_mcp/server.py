@@ -21,7 +21,6 @@ from videojungle import ApiClient, VideoFilters
 from .search_local_videos import get_videos_by_keyword
 from .generate_charts import render_bar_chart
 from .generate_opentimeline import create_otio_timeline
-from .utils import dvr_script
 
 import numpy as np
 
@@ -155,7 +154,7 @@ except Exception as e:
     videos_at_start = []
 
 counter = 10
-resolve_available = False
+
 
 tools = [
     "add-video",
@@ -212,15 +211,10 @@ async def handle_list_resources() -> list[types.Resource]:
     List available video files.
     Each video files is available at a specific url
     """
-    global counter, projects_at_start, resolve_available
+    global counter, projects_at_start
     counter += 1
     # check to see if DaVinci Resolve is open
-    if dvr_script:
-        logging.info("DaVinci Resolve is currently open")
-        resolve_available = True
-    else:
-        logging.info("DaVinci Resolve is not currently open")
-        resolve_available = False
+
     # We do this counter because otherwise Claude is very aggressive
     # about requests
     if counter % 100 == 0:
@@ -736,16 +730,17 @@ async def handle_call_tool(
             raise ValueError("Missing edit and / or  project id")
         env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
         edit_data = vj.projects.get_edit(project_id, edit_id)
-        with open(f"{edit_data['name']}.json", "w") as f:
+        formatted_name = edit_data["name"].replace(" ", "-")
+        with open(f"{formatted_name}.json", "w") as f:
             json.dump(edit_data, f, indent=4)
         logging.info(f"edit data is: {edit_data}")
-        formatted_name = edit_data["name"].replace(" ", "-")
+        logging.info(f"current directory is: {os.getcwd()}")
         subprocess.Popen(
             [
                 "uv",
                 "run",
                 "python",
-                "-",
+                "./src/video_editor_mcp/generate_opentimeline.py",
                 "--file",
                 f"{formatted_name}.json",
                 "--output",
@@ -753,6 +748,7 @@ async def handle_call_tool(
             ],
             env=env_vars,
         )
+
         return [
             types.TextContent(
                 type="text",
@@ -995,6 +991,7 @@ async def handle_call_tool(
         # the following generates an edit for opentimeline, allowing you to open it in
         # a desktop video editor like final cut pro, etc.
         try:
+            original_dir = os.getcwd()
             os.chdir("./tools")
             logging.info(f"in directory: {os.getcwd()}")
             # don't block, because this might take a while
@@ -1013,6 +1010,7 @@ async def handle_call_tool(
                 ],
                 env=env_vars,
             )
+            os.chdir(original_dir)
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
 
