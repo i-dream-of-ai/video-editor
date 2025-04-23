@@ -21,7 +21,10 @@ from videojungle import ApiClient, VideoFilters
 from .search_local_videos import get_videos_by_keyword
 from .generate_charts import render_bar_chart
 from .generate_opentimeline import create_otio_timeline
+from .utils import dvr_script
+
 import numpy as np
+
 
 if os.environ.get("VJ_API_KEY"):
     VJ_API_KEY = os.environ.get("VJ_API_KEY")
@@ -210,7 +213,11 @@ async def handle_list_resources() -> list[types.Resource]:
     """
     global counter, projects_at_start
     counter += 1
-
+    # check to see if DaVinci Resolve is open
+    if dvr_script:
+        logging.info("DaVinci Resolve is currently open")
+    else:
+        logging.info("DaVinci Resolve is not currently open")
     # We do this counter because otherwise Claude is very aggressive
     # about requests
     if counter % 100 == 0:
