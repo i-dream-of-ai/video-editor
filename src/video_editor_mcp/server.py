@@ -155,6 +155,7 @@ except Exception as e:
     videos_at_start = []
 
 counter = 10
+resolve_available = False
 
 tools = [
     "add-video",
@@ -211,13 +212,15 @@ async def handle_list_resources() -> list[types.Resource]:
     List available video files.
     Each video files is available at a specific url
     """
-    global counter, projects_at_start
+    global counter, projects_at_start, resolve_available
     counter += 1
     # check to see if DaVinci Resolve is open
     if dvr_script:
         logging.info("DaVinci Resolve is currently open")
+        resolve_available = True
     else:
         logging.info("DaVinci Resolve is not currently open")
+        resolve_available = False
     # We do this counter because otherwise Claude is very aggressive
     # about requests
     if counter % 100 == 0:
