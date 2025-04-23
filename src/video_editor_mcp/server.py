@@ -980,9 +980,6 @@ async def handle_call_tool(
 
         edit = vj.projects.render_edit(project, json_edit)
 
-        with open(f"{project}.json", "w") as f:
-            json.dump(json_edit, f, indent=4)
-
         webbrowser.open(
             f"https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}"
         )
@@ -990,6 +987,7 @@ async def handle_call_tool(
         BROWSER_OPEN = True
         # the following generates an edit for opentimeline, allowing you to open it in
         # a desktop video editor like final cut pro, etc.
+        """
         try:
             original_dir = os.getcwd()
             os.chdir("./tools")
@@ -1013,7 +1011,7 @@ async def handle_call_tool(
             os.chdir(original_dir)
         except Exception as e:
             logging.info(f"Error running viewer: {e}")
-
+        """
         if created:
             # we created a new project so let the user / LLM know
             return [
