@@ -53,15 +53,24 @@ def create_otio_timeline(
         video = vj.video_files.get(cut["video_id"])
         local_file = os.path.join(download_dir, f"{video.name}.mp4")
         os.makedirs(download_dir, exist_ok=True)
+
         if not video.download_url:
             logging.info(f"Skipping video {video.id} - no download URL provided")
             continue
-        lf = vj.video_files.download(video.id, local_file)
+
+        # Check if file already exists
+        if os.path.exists(local_file):
+            logging.info(f"Video already exists at {local_file}, skipping download")
+            lf = local_file
+        else:
+            lf = vj.video_files.download(video.id, local_file)
+            logging.info(f"Downloaded video to {lf}")
+
         fps = video.fps if video.fps else 24.0
         start_time = create_rational_time(cut["video_start_time"], fps)
         end_time = create_rational_time(cut["video_end_time"], fps)
         # print(lf)
-        logging.info(f"Downloaded video to {lf}")
+
         clip = otio.schema.Clip(
             name=f"clip_{edit_spec['name']}",
             media_reference=otio.schema.ExternalReference(
@@ -72,8 +81,7 @@ def create_otio_timeline(
         track.append(clip)
 
     otio.adapters.write_to_file(timeline, filename)
-    # open the directory afterwards
-    subprocess.call(["open", "."])
+    logging.info(f"OTIO timeline saved to {filename}")
 
 
 if __name__ == "__main__":

@@ -782,6 +782,7 @@ async def handle_call_tool(
         limit = arguments.get("limit", 10)
         project_id = arguments.get("project_id")
         tags = arguments.get("tags", None)
+        page = arguments.get("page", 1)
         duration_min = arguments.get("duration_min", None)
         duration_max = arguments.get("duration_max", None)
         created_after = arguments.get("created_after", None)
