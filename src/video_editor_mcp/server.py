@@ -159,7 +159,7 @@ counter = 10
 
 # Cache for pagination with timestamps for cleanup
 _search_result_cache: Dict[str, Dict] = {}
-_CACHE_TTL = 60 * 4  # 2 minute cache TTL
+_CACHE_TTL = 60 * 4  # 4 minute cache TTL
 
 
 # Function to clean old cache entries
