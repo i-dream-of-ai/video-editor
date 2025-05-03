@@ -3,9 +3,11 @@ import os
 import subprocess
 import sys
 import threading
-from typing import List, Optional, Union, Any
+import time
+from typing import List, Optional, Union, Any, Dict
 import json
 import webbrowser
+import uuid
 
 import mcp.server.stdio
 import mcp.types as types
@@ -154,6 +156,27 @@ except Exception as e:
     videos_at_start = []
 
 counter = 10
+
+# Cache for pagination with timestamps for cleanup
+_search_result_cache: Dict[str, Dict] = {}
+_CACHE_TTL = 60 * 4  # 2 minute cache TTL
+
+
+# Function to clean old cache entries
+def cleanup_cache():
+    """Remove cache entries older than TTL."""
+    current_time = time.time()
+    keys_to_remove = []
+
+    for key, cache_entry in _search_result_cache.items():
+        if current_time - cache_entry["timestamp"] > _CACHE_TTL:
+            keys_to_remove.append(key)
+
+    for key in keys_to_remove:
+        del _search_result_cache[key]
+
+    if keys_to_remove:
+        logging.info(f"Cleaned up {len(keys_to_remove)} expired search caches")
 
 
 tools = [
@@ -369,7 +392,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="search-remote-videos",
-            description="Default method to search videos. Will return videos including video_ids, which allow for information retrieval and building video edits.",
+            description="Default method to search videos. Will return videos including video_ids, which allow for information retrieval and building video edits. For large result sets, you can paginate through chunks using search_id and page parameters.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -378,7 +401,7 @@ async def handle_list_tools() -> list[types.Tool]:
                         "type": "integer",
                         "default": 10,
                         "minimum": 1,
-                        "description": "Maximum number of results to return",
+                        "description": "Maximum number of results to return per page",
                     },
                     "project_id": {
                         "type": "string",
@@ -394,6 +417,23 @@ async def handle_list_tools() -> list[types.Tool]:
                         "type": "number",
                         "minimum": 0,
                         "description": "Maximum video duration in seconds",
+                    },
+                    "search_id": {
+                        "type": "string",
+                        "description": "ID of a previous search to continue pagination. If provided, returns the next chunk of results",
+                    },
+                    "page": {
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1,
+                        "description": "Page number to retrieve when paginating through results",
+                    },
+                    "items_per_page": {
+                        "type": "integer",
+                        "default": 5,
+                        "minimum": 1,
+                        "maximum": 20,
+                        "description": "Number of items to show per page when paginating",
                     },
                 },
                 "created_after": {
@@ -432,6 +472,7 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "oneOf": [
                     {"required": ["query"]},
+                    {"required": ["search_id"]},
                 ],
             },
         ),
@@ -702,6 +743,9 @@ async def handle_call_tool(
     if not arguments:
         raise ValueError("Missing arguments")
 
+    # Store some tool results in server state for pagination
+    global _search_result_cache
+
     if name == "create-videojungle-project" and arguments:
         namez = arguments.get("name")
         description = arguments.get("description")
@@ -775,14 +819,83 @@ async def handle_call_tool(
             )
         ]
     if name == "search-remote-videos" and arguments:
-        # Extract all possible search parameters
+        # Check if this is a pagination request
+        search_id = arguments.get("search_id")
+        page = arguments.get("page", 1)
+        items_per_page = arguments.get("items_per_page", 5)
+
+        # Run cache cleanup
+        cleanup_cache()
+
+        # If we have a search_id, we're doing pagination
+        if search_id and search_id in _search_result_cache:
+            cache_entry = _search_result_cache[search_id]
+            cached_results = cache_entry["results"]
+            total_items = len(cached_results)
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+
+            # Update timestamp on access
+            _search_result_cache[search_id]["timestamp"] = time.time()
+
+            start_idx = (page - 1) * items_per_page
+            end_idx = min(start_idx + items_per_page, total_items)
+
+            # Get current page items
+            current_page_items = cached_results[start_idx:end_idx]
+
+            # Format the paginated results
+            query_info = cache_entry.get("query", "unknown")
+            response_text = []
+            response_text.append(
+                f"Search Results for '{query_info}' (Page {page}/{total_pages}, showing items {start_idx+1}-{end_idx} of {total_items})"
+            )
+
+            # Format each item based on whether it's a regular result or an embedding result
+            if len(current_page_items) > 0:
+                if (
+                    isinstance(current_page_items[0], dict)
+                    and "video_id" in current_page_items[0]
+                ):
+                    response_text.extend(
+                        format_video_info(video) for video in current_page_items
+                    )
+                else:
+                    response_text.extend(current_page_items)
+            else:
+                response_text.append("No items to display on this page.")
+
+            # Add pagination info with navigation options
+            pagination_info = []
+            if page > 1:
+                pagination_info.append(
+                    f"Previous page: call search-remote-videos with search_id='{search_id}' and page={page-1}"
+                )
+
+            has_more = page < total_pages
+            if has_more:
+                pagination_info.append(
+                    f"Next page: call search-remote-videos with search_id='{search_id}' and page={page+1}"
+                )
+
+            if pagination_info:
+                response_text.append("\nNavigation options:")
+                response_text.extend(pagination_info)
+
+            if not has_more:
+                response_text.append("\nEnd of results.")
+
+            return [
+                types.TextContent(
+                    type="text",
+                    text="\n".join(response_text),
+                )
+            ]
+
+        # This is a new search request
         query = arguments.get("query")
-        # query_audio = arguments.get("query_audio")
-        # query_img = arguments.get("query_img")
         limit = arguments.get("limit", 10)
         project_id = arguments.get("project_id")
         tags = arguments.get("tags", None)
-        page = arguments.get("page", 1)
         duration_min = arguments.get("duration_min", None)
         duration_max = arguments.get("duration_max", None)
         created_after = arguments.get("created_after", None)
@@ -822,12 +935,12 @@ async def handle_call_tool(
             search_params["query"] = query
         if project_id:
             search_params["project_id"] = project_id
-        videos = []
 
+        embedding_results = []
+
+        # If we have a text query, do embedding search
         if query:
             embeddings = model_loader.encode_text(query)
-            # logging.info(f"Embeddings are: {embeddings}")
-
             response = model_loader.post_embeddings(
                 embeddings,
                 "https://api.video-jungle.com/video-file/embedding-search",
@@ -838,11 +951,17 @@ async def handle_call_tool(
             if response.status_code != 200:
                 raise RuntimeError(f"Error searching for videos: {response.text}")
 
-            videos = response.json()
-            embedding_search_response = [format_single_video(video) for video in videos]
+            embedding_results = response.json()
+            embedding_search_formatted = [
+                format_single_video(video) for video in embedding_results
+            ]
 
-        # Format response based on number of results
-        if len(videos) <= 3 and len(videos) >= 1:
+        # Get regular search results
+        videos = vj.video_files.search(**search_params)
+        logging.info(f"num videos are: {len(videos)}")
+
+        # If only a few results, return them directly without pagination
+        if len(videos) <= 3 and len(videos) >= 1 and not embedding_results:
             return [
                 types.TextContent(
                     type="text",
@@ -851,20 +970,56 @@ async def handle_call_tool(
                 for video in videos
             ]
 
-        videos = vj.video_files.search(**search_params)
-        logging.info(f"num videos are: {len(videos)}")
+        # For larger result sets, set up pagination
+        formatted_videos = [format_video_info(video) for video in videos]
 
-        # Combine embedding search results and regular search results
+        # Store the results in the cache for pagination
+        new_search_id = str(uuid.uuid4())
+
+        all_results = []
+        if query and embedding_results:
+            # Store both types of results
+            all_results = formatted_videos + embedding_search_formatted
+        else:
+            all_results = formatted_videos
+
+        # Store results with timestamp
+        _search_result_cache[new_search_id] = {
+            "results": all_results,
+            "timestamp": time.time(),
+            "query": query or "tag-search",
+        }
+
+        # Calculate pagination info
+        total_items = len(all_results)
+        total_pages = (total_items + items_per_page - 1) // items_per_page
+
+        # Format the first page results
         response_text = []
-        response_text.append(f"Number of Videos Returned: {len(videos)}")
-        response_text.extend(format_video_info(video) for video in videos)
+        query_display = query or "tag search"
+        response_text.append(
+            f"Search Results for '{query_display}' (Page 1/{total_pages}, showing items 1-{min(items_per_page, total_items)} of {total_items})"
+        )
 
-        if query:  # Only include embedding search results if text query was used
+        # Show first page items
+        first_page_items = all_results[:items_per_page]
+        if first_page_items:
+            response_text.extend(first_page_items)
+        else:
+            response_text.append("No results found matching your query.")
+
+        # Add pagination info
+        has_more = total_pages > 1
+        if has_more:
+            response_text.append(f"\nNavigation options:")
             response_text.append(
-                f"Number of embedding search results: {len(embedding_search_response)}"
+                f"Next page: call search-remote-videos with search_id='{new_search_id}' and page=2"
             )
-            response_text.extend(embedding_search_response)
-        logging.info(f"Videos returned are {videos}")
+            response_text.append(
+                f"\nTip: You can control items per page with the items_per_page parameter (default: 5, max: 20)"
+            )
+        else:
+            response_text.append("\nEnd of results.")
 
         return [
             types.TextContent(
