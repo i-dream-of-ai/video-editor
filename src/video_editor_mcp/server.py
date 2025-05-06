@@ -846,6 +846,11 @@ async def handle_call_tool(
                 f"Search Results for '{query_info}' (Page {page}/{total_pages}, showing items {start_idx+1}-{end_idx} of {total_items})"
             )
 
+            # Add embedding note if it exists in the cache
+            embedding_note = cache_entry.get("embedding_note")
+            if embedding_note:
+                response_text.append(embedding_note)
+
             # Format each item based on whether it's a regular result or an embedding result
             if len(current_page_items) > 0:
                 if (
@@ -933,24 +938,44 @@ async def handle_call_tool(
             search_params["project_id"] = project_id
 
         embedding_results = []
+        embedding_search_formatted = []
+        embedding_note = None
 
-        # If we have a text query, do embedding search
+        # If we have a text query, try embedding search but fallback to regular search if model is still loading
         if query:
-            embeddings = model_loader.encode_text(query)
-            response = model_loader.post_embeddings(
-                embeddings,
-                "https://api.video-jungle.com/video-file/embedding-search",
-                headers={"Content-Type": "application/json", "X-API-KEY": VJ_API_KEY},
-            )
+            try:
+                embeddings = model_loader.encode_text(query)
+                response = model_loader.post_embeddings(
+                    embeddings,
+                    "https://api.video-jungle.com/video-file/embedding-search",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-API-KEY": VJ_API_KEY,
+                    },
+                )
 
-            logging.info(f"Response is: {response.json()}")
-            if response.status_code != 200:
-                raise RuntimeError(f"Error searching for videos: {response.text}")
+                logging.info(f"Response is: {response.json()}")
+                if response.status_code != 200:
+                    raise RuntimeError(f"Error searching for videos: {response.text}")
 
-            embedding_results = response.json()
-            embedding_search_formatted = [
-                format_single_video(video) for video in embedding_results
-            ]
+                embedding_results = response.json()
+                embedding_search_formatted = [
+                    format_single_video(video) for video in embedding_results
+                ]
+            except Exception as e:
+                if "still loading" in str(e):
+                    logging.warning(
+                        "Embedding model still loading, falling back to text-only search"
+                    )
+                    embedding_results = []
+                    embedding_search_formatted = []
+                    # Add note that will be displayed to the user
+                    embedding_note = "Note: Embedding-based semantic search is still initializing. Only text-based search results are shown. Please try again later for more accurate semantic search results."
+                else:
+                    # For other errors, log and continue with regular search
+                    logging.error(f"Error in embedding search: {e}")
+                    embedding_results = []
+                    embedding_search_formatted = []
 
         # Get regular search results
         videos = vj.video_files.search(**search_params)
@@ -979,11 +1004,12 @@ async def handle_call_tool(
         else:
             all_results = formatted_videos
 
-        # Store results with timestamp
+        # Store results with timestamp and embedding note if present
         _search_result_cache[new_search_id] = {
             "results": all_results,
             "timestamp": time.time(),
             "query": query or "tag-search",
+            "embedding_note": embedding_note,
         }
 
         # Calculate pagination info
@@ -996,6 +1022,10 @@ async def handle_call_tool(
         response_text.append(
             f"Search Results for '{query_display}' (Page 1/{total_pages}, showing items 1-{min(items_per_page, total_items)} of {total_items})"
         )
+
+        # Add note about embedding search if it was skipped due to model loading
+        if embedding_note:
+            response_text.append(embedding_note)
 
         # Show first page items
         first_page_items = all_results[:items_per_page]
