@@ -470,10 +470,6 @@ async def handle_list_tools() -> list[types.Tool]:
                     "type": "string",
                     "description": "Image search query",
                 },
-                "oneOf": [
-                    {"required": ["query"]},
-                    {"required": ["search_id"]},
-                ],
             },
         ),
         types.Tool(
