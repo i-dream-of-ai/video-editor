@@ -683,7 +683,7 @@ async def handle_list_tools() -> list[types.Tool]:
                         "asset_types": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'video_edit')",
+                            "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'video_edit'). Video assets in a project are labeled 'user' for user uploaded, so prefer 'user' when building a video edit from project assets.",
                             "default": ["user", "video", "image", "audio"],
                         },
                         "page": {
@@ -940,6 +940,10 @@ async def handle_list_tools() -> list[types.Tool]:
                                 "video_end_time": {
                                     "type": "string",
                                     "description": "Clip end time in 00:00:00.000 format",
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
                                 },
                             },
                         },
@@ -1884,7 +1888,7 @@ async def handle_call_tool(
                     "video_id": clip["video_id"],
                     "video_start_time": clip["video_start_time"],
                     "video_end_time": clip["video_end_time"],
-                    "type": "videofile",
+                    "type": clip["type"],
                     "audio_levels": [
                         {
                             "audio_level": 0.5,
