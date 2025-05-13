@@ -1159,32 +1159,14 @@ def format_asset_info(asset):
             # Look for generated description (from your example)
             gen_desc = asset.get("generated_description", "N/A")
             if gen_desc and gen_desc != "N/A":
-                if len(gen_desc) > 120:
-                    formatted.append(f"  Generated description: {gen_desc[:117]}...")
-                else:
-                    formatted.append(f"  Generated description: {gen_desc}")
+                formatted.append(f"  Generated description: {gen_desc}")
 
             # Check for create_parameters.analysis (from your example)
             create_params = asset.get("create_parameters", {})
             if create_params and isinstance(create_params, dict):
                 analysis = create_params.get("analysis", {})
                 if analysis and isinstance(analysis, dict):
-                    # Add tags
-                    tags = analysis.get("tags", [])
-                    if tags and len(tags) > 0:
-                        formatted.append(f"  Tags: {', '.join(tags[:8])}")
-                        if len(tags) > 8:
-                            formatted.append(f"    ... and {len(tags)-8} more tags")
-
-                    # Show people detected
-                    people = analysis.get("people", [])
-                    if people and len(people) > 0:
-                        people_names = [
-                            person.get("name", "Unknown") for person in people[:5]
-                        ]
-                        formatted.append(f"  People: {', '.join(people_names)}")
-                        if len(people) > 5:
-                            formatted.append(f"    ... and {len(people)-5} more people")
+                    formatted.append(f" analysis: {str(analysis)}")
 
             # Status field (if available)
             status = asset.get("status", "N/A")
