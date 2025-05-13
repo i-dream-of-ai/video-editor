@@ -159,6 +159,7 @@ counter = 10
 
 # Cache for pagination with timestamps for cleanup
 _search_result_cache: Dict[str, Dict] = {}
+_project_assets_cache: Dict[str, Dict] = {}
 _CACHE_TTL = 60 * 4  # 4 minute cache TTL
 
 
@@ -166,17 +167,30 @@ _CACHE_TTL = 60 * 4  # 4 minute cache TTL
 def cleanup_cache():
     """Remove cache entries older than TTL."""
     current_time = time.time()
-    keys_to_remove = []
+    search_keys_to_remove = []
+    project_keys_to_remove = []
 
+    # Clean search cache
     for key, cache_entry in _search_result_cache.items():
         if current_time - cache_entry["timestamp"] > _CACHE_TTL:
-            keys_to_remove.append(key)
+            search_keys_to_remove.append(key)
 
-    for key in keys_to_remove:
+    for key in search_keys_to_remove:
         del _search_result_cache[key]
 
-    if keys_to_remove:
-        logging.info(f"Cleaned up {len(keys_to_remove)} expired search caches")
+    # Clean project assets cache
+    for key, cache_entry in _project_assets_cache.items():
+        if current_time - cache_entry["timestamp"] > _CACHE_TTL:
+            project_keys_to_remove.append(key)
+
+    for key in project_keys_to_remove:
+        del _project_assets_cache[key]
+
+    total_removed = len(search_keys_to_remove) + len(project_keys_to_remove)
+    if total_removed > 0:
+        logging.info(
+            f"Cleaned up {len(search_keys_to_remove)} expired search caches and {len(project_keys_to_remove)} project asset caches"
+        )
 
 
 tools = [
@@ -184,6 +198,7 @@ tools = [
     "search-local-videos",
     "search-remote-videos",
     "generate-edit-from-videos",
+    "get-project-assets",
     "create-videojungle-project",
     "create-video-bar-chart-from-two-axis-data",
     "create-video-line-chart-from-two-axis-data",
@@ -529,6 +544,10 @@ async def handle_list_tools() -> list[types.Tool]:
                                     "type": "string",
                                     "description": "Clip end time in 00:00:00.000 format",
                                 },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
+                                },
                             },
                         },
                     },
@@ -649,6 +668,43 @@ async def handle_list_tools() -> list[types.Tool]:
                         "filename": {"type": "string"},
                     },
                     "required": ["x_values", "y_values", "x_label", "y_label", "title"],
+                },
+            ),
+            types.Tool(
+                name="get-project-assets",
+                description="Get all assets and details for a specific project, with pagination support for large projects",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "project_id": {
+                            "type": "string",
+                            "description": "UUID of the project to retrieve assets for",
+                        },
+                        "asset_types": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'video_edit')",
+                            "default": ["user", "video", "image", "audio"],
+                        },
+                        "page": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1,
+                            "description": "Page number to retrieve when paginating through assets",
+                        },
+                        "items_per_page": {
+                            "type": "integer",
+                            "default": 10,
+                            "minimum": 1,
+                            "maximum": 50,
+                            "description": "Number of items to show per page when paginating",
+                        },
+                        "asset_cache_id": {
+                            "type": "string",
+                            "description": "ID of a previous asset cache to continue pagination. If provided, returns the next chunk of results",
+                        },
+                    },
+                    "required": ["project_id"],
                 },
             ),
         ]
@@ -932,6 +988,43 @@ async def handle_list_tools() -> list[types.Tool]:
                 "required": ["x_values", "y_values", "x_label", "y_label", "title"],
             },
         ),
+        types.Tool(
+            name="get-project-assets",
+            description="Get all assets and details for a specific project, with pagination support for large projects",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_id": {
+                        "type": "string",
+                        "description": "UUID of the project to retrieve assets for",
+                    },
+                    "asset_types": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'video_edit')",
+                        "default": ["user", "video", "image", "audio"],
+                    },
+                    "page": {
+                        "type": "integer",
+                        "default": 1,
+                        "minimum": 1,
+                        "description": "Page number to retrieve when paginating through assets",
+                    },
+                    "items_per_page": {
+                        "type": "integer",
+                        "default": 10,
+                        "minimum": 1,
+                        "maximum": 50,
+                        "description": "Number of items to show per page when paginating",
+                    },
+                    "asset_cache_id": {
+                        "type": "string",
+                        "description": "ID of a previous asset cache to continue pagination. If provided, returns the next chunk of results",
+                    },
+                },
+                "required": ["project_id"],
+            },
+        ),
     ]
 
 
@@ -1011,6 +1104,137 @@ def format_video_info_long(video):
         )
     except Exception as e:
         return f"Error formatting video: {str(e)}"
+
+
+def format_asset_info(asset):
+    """Format asset information for display based on the example structure you showed"""
+    try:
+        # Support both type and asset_type fields
+        asset_type = asset.get("type", asset.get("asset_type", "unknown"))
+        asset_id = asset.get("id", "N/A")
+        # Support both name and keyname fields
+        asset_name = asset.get("name", asset.get("keyname", "N/A"))
+
+        # Common fields first
+        formatted = [f"- Asset ID: {asset_id}"]
+        formatted.append(f"  Type: {asset_type}")
+        formatted.append(f"  Name: {asset_name}")
+
+        # Get URL (try different possible fields)
+        url = asset.get("url", "N/A")
+        download_url = asset.get("download_url", "N/A")
+
+        if url and url != "N/A":
+            # Truncate very long URLs
+            if len(url) > 80:
+                formatted.append(f"  URL: {url[:77]}...")
+            else:
+                formatted.append(f"  URL: {url}")
+
+        if download_url and download_url != "N/A" and download_url != url:
+            if len(download_url) > 80:
+                formatted.append(f"  Download URL: {download_url[:77]}...")
+            else:
+                formatted.append(f"  Download URL: {download_url}")
+
+        # Description
+        description = asset.get("description", "N/A")
+        if description and description != "N/A":
+            if len(description) > 120:
+                formatted.append(f"  Description: {description[:117]}...")
+            else:
+                formatted.append(f"  Description: {description}")
+
+        # Creation time
+        created_at = asset.get("created_at", "N/A")
+        if created_at and created_at != "N/A":
+            formatted.append(f"  Created: {created_at}")
+
+        # Handle video assets and user-uploaded content
+        if asset_type in ["user", "video"]:
+            # Look for generated description (from your example)
+            gen_desc = asset.get("generated_description", "N/A")
+            if gen_desc and gen_desc != "N/A":
+                if len(gen_desc) > 120:
+                    formatted.append(f"  Generated description: {gen_desc[:117]}...")
+                else:
+                    formatted.append(f"  Generated description: {gen_desc}")
+
+            # Check for create_parameters.analysis (from your example)
+            create_params = asset.get("create_parameters", {})
+            if create_params and isinstance(create_params, dict):
+                analysis = create_params.get("analysis", {})
+                if analysis and isinstance(analysis, dict):
+                    # Add tags
+                    tags = analysis.get("tags", [])
+                    if tags and len(tags) > 0:
+                        formatted.append(f"  Tags: {', '.join(tags[:8])}")
+                        if len(tags) > 8:
+                            formatted.append(f"    ... and {len(tags)-8} more tags")
+
+                    # Show people detected
+                    people = analysis.get("people", [])
+                    if people and len(people) > 0:
+                        people_names = [
+                            person.get("name", "Unknown") for person in people[:5]
+                        ]
+                        formatted.append(f"  People: {', '.join(people_names)}")
+                        if len(people) > 5:
+                            formatted.append(f"    ... and {len(people)-5} more people")
+
+            # Status field (if available)
+            status = asset.get("status", "N/A")
+            if status and status != "N/A":
+                formatted.append(f"  Status: {status}")
+
+            # Asset path field (if available)
+            asset_path = asset.get("asset_path", "N/A")
+            if asset_path and asset_path != "N/A":
+                formatted.append(f"  Asset path: {asset_path}")
+
+        # Handle video_edit assets
+        elif asset_type == "video_edit":
+            description = asset.get("description", "N/A")
+            if description and description != "N/A":
+                formatted.append(f"  Description: {description}")
+
+            # Add edit-specific details
+            resolution = asset.get("video_output_resolution", "N/A")
+            fps = asset.get("video_output_fps", "N/A")
+            format = asset.get("video_output_format", "N/A")
+
+            if resolution != "N/A":
+                formatted.append(f"  Resolution: {resolution}")
+            if fps != "N/A":
+                formatted.append(f"  FPS: {fps}")
+            if format != "N/A":
+                formatted.append(f"  Format: {format}")
+
+            # Show clips in the edit
+            clips = asset.get("video_series_sequential", [])
+            if clips and len(clips) > 0:
+                formatted.append(f"  Clips: {len(clips)} total")
+                # Show first 3 clips as examples
+                for i, clip in enumerate(clips[:3]):
+                    clip_id = clip.get("video_id", "N/A")
+                    start = clip.get("video_start_time", "N/A")
+                    end = clip.get("video_end_time", "N/A")
+                    asset_type = clip.get("type", "N/A")
+                    formatted.append(
+                        f"    Clip {i+1}: {clip_id} of type {asset_type} from {start} to {end}"
+                    )
+                if len(clips) > 3:
+                    formatted.append(f"    ... and {len(clips)-3} more clips")
+
+        # Add any other important fields we might have missed
+        important_fields = ["filetype", "duration", "width", "height", "uploaded"]
+        for field in important_fields:
+            if field in asset and asset[field] is not None and asset[field] != "N/A":
+                formatted.append(f"  {field}: {asset[field]}")
+
+        return "\n".join(formatted)
+    except Exception as e:
+        return f"Error formatting asset {asset.get('id', 'unknown')}: {str(e)}"
 
 
 @server.call_tool()
@@ -1410,7 +1634,7 @@ async def handle_call_tool(
                 "video_id": cut["video_id"],
                 "video_start_time": cut["video_start_time"],
                 "video_end_time": cut["video_end_time"],
-                "type": "videofile",
+                "type": cut["type"],
                 "audio_levels": [
                     {
                         "audio_level": 0.5,
@@ -1600,7 +1824,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
+                text=f"Generated edit with id '{edit.id}' in project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
             )
         ]
 
@@ -1720,9 +1944,179 @@ async def handle_call_tool(
             )
         ]
 
+    if name == "get-project-assets" and arguments:
+        # Extract arguments
+        project_id = arguments.get("project_id")
+        page = arguments.get("page", 1)
+        items_per_page = arguments.get("items_per_page", 10)
+        asset_cache_id = arguments.get("asset_cache_id")
+        asset_types = arguments.get("asset_types", ["user", "video", "image", "audio"])
+
+        # Validate required arguments
+        if not project_id:
+            raise ValueError("Missing project_id parameter")
+
+        # Run cache cleanup
+        cleanup_cache()
+
+        # Check if this is a pagination request using an existing cache
+        if asset_cache_id and asset_cache_id in _project_assets_cache:
+            cache_entry = _project_assets_cache[asset_cache_id]
+            cached_assets = cache_entry["assets"]
+            project_info = cache_entry.get("project_info", {})
+
+            # Update timestamp on access
+            _project_assets_cache[asset_cache_id]["timestamp"] = time.time()
+
+            # Calculate pagination
+            total_items = len(cached_assets)
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+
+            # Calculate current page items
+            start_idx = (page - 1) * items_per_page
+            end_idx = min(start_idx + items_per_page, total_items)
+            current_page_items = cached_assets[start_idx:end_idx]
+
+            # Format the response
+            response_text = []
+
+            # Add project info header
+            project_name = project_info.get("name", "Project")
+            project_description = project_info.get("description", "")
+
+            response_text.append(f"Project: {project_name}")
+            if project_description:
+                response_text.append(f"Description: {project_description}")
+
+            response_text.append(
+                f"\nAssets (Page {page}/{total_pages}, showing items {start_idx+1}-{end_idx} of {total_items}):"
+            )
+
+            # Format each asset
+            if current_page_items:
+                formatted_assets = [
+                    format_asset_info(asset) for asset in current_page_items
+                ]
+                response_text.extend(formatted_assets)
+            else:
+                response_text.append("No assets to display on this page.")
+
+            # Add pagination info
+            navigation_options = []
+            if page > 1:
+                navigation_options.append(
+                    f"Previous page: call get-project-assets with asset_cache_id='{asset_cache_id}' and page={page-1}"
+                )
+
+            has_more = page < total_pages
+            if has_more:
+                navigation_options.append(
+                    f"Next page: call get-project-assets with asset_cache_id='{asset_cache_id}' and page={page+1}"
+                )
+
+            if navigation_options:
+                response_text.append("\nNavigation options:")
+                response_text.extend(navigation_options)
+
+            if not has_more:
+                response_text.append("\nEnd of results.")
+
+            return [types.TextContent(type="text", text="\n".join(response_text))]
+
+        # This is a new request - get the project and its assets
+        try:
+            # Fetch project data
+            project = vj.projects.get(project_id)
+            logging.info(f"Retrieved project: {project.name} (ID: {project_id})")
+
+            # Get project data as a dictionary so we can extract assets
+            project_data = project.model_dump()
+            logging.info(f"Project data: {project_data}")
+
+            # Direct assignment - based on the data structure you showed
+            all_assets = project_data.get("assets", [])
+            logging.info(f"Found {len(all_assets)} assets in project")
+
+            # Filter assets by asset_type if specified
+            project_assets = []
+            for asset in all_assets:
+                if not asset_types or asset.get("asset_type") in asset_types:
+                    project_assets.append(asset)
+
+            logging.info(
+                f"After filtering by types {asset_types}: {len(project_assets)} assets remaining"
+            )
+            # If no assets found, provide a helpful message
+            if not project_assets:
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=f"Project {project.name} (ID: {project_id}) contains no assets of types: {', '.join(asset_types)}.",
+                    )
+                ]
+
+            # Store results in cache for pagination
+            new_cache_id = str(uuid.uuid4())
+            _project_assets_cache[new_cache_id] = {
+                "assets": project_assets,
+                "project_info": {
+                    "id": project_id,
+                    "name": project.name,
+                    "description": project.description,
+                },
+                "timestamp": time.time(),
+            }
+
+            # Calculate pagination
+            total_items = len(project_assets)
+            total_pages = (total_items + items_per_page - 1) // items_per_page
+
+            # Get first page
+            first_page_items = project_assets[:items_per_page]
+
+            # Format the response
+            response_text = []
+
+            # Add project info header
+            response_text.append(f"Project: {project.name}")
+            if project.description:
+                response_text.append(f"Description: {project.description}")
+
+            response_text.append(
+                f"\nAssets (Page 1/{total_pages}, showing items 1-{min(items_per_page, total_items)} of {total_items}):"
+            )
+
+            # Format assets
+            if first_page_items:
+                formatted_assets = [
+                    format_asset_info(asset) for asset in first_page_items
+                ]
+                response_text.extend(formatted_assets)
+            else:
+                response_text.append("No assets to display.")
+
+            # Add pagination info
+            has_more = total_pages > 1
+            if has_more:
+                response_text.append(f"\nNavigation options:")
+                response_text.append(
+                    f"Next page: call get-project-assets with asset_cache_id='{new_cache_id}' and page=2"
+                )
+                response_text.append(
+                    f"\nTip: You can control items per page with the items_per_page parameter (default: 10, max: 50)"
+                )
+            else:
+                response_text.append("\nEnd of results.")
+
+            return [types.TextContent(type="text", text="\n".join(response_text))]
+
+        except Exception as e:
+            logging.error(f"Error fetching project assets: {e}")
+            raise ValueError(f"Error retrieving project assets: {str(e)}")
+
     if (
-        name == "create-video-bar-chart-from-two-axis-data"
-        or "create-video-line-chart-from-two-axis-data"
+        (name == "create-video-bar-chart-from-two-axis-data")
+        or (name == "create-video-line-chart-from-two-axis-data")
         and arguments
     ):
         x_values = arguments.get("x_values")
