@@ -26,14 +26,22 @@ Coming soon.
 ### Tools
 
 The server implements a few tools:
-- add-video: Add a video from a URL
-  - Returns an vj:// URI to reference the Video file
-- search-videos: Search videos using embeddings
-  - Returns video matches based upon embeddings and keywords
+- add-video
+  - Add a Video File for analysis from a URL. Returns an vj:// URI to reference the Video file
+- create-videojungle-project
+  - Creates a Video Jungle project to contain generative scripts, analyzed videos, and images for video edit generation
+- edit-locally
+  - Creates an OpenTimelineIO project and downloads it to your machine to open in a Davinci Resolve Studio instance (Resolve Studio _must_ already be running before calling this tool.) 
 - generate-edit-from-videos
   - Generates a rendered video edit from a set of video files
 - generate-edit-from-single-video
   - Generate an edit from a single input video file
+- get-project-assets
+  - Get assets within a project for video edit generation.
+- search-videos
+  - Returns video matches based upon embeddings and keywords
+- update-video-edit
+  - Live update a video edit's information. If Video Jungle is open, edit will be updated in real time.
 
 ### Using Tools in Practice
 
