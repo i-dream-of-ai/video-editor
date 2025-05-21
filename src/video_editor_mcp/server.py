@@ -798,40 +798,40 @@ async def handle_list_tools() -> list[types.Tool]:
                         "maximum": 20,
                         "description": "Number of items to show per page when paginating",
                     },
-                },
-                "created_after": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Filter videos created after this datetime",
-                },
-                "created_before": {
-                    "type": "string",
-                    "format": "date-time",
-                    "description": "Filter videos created before this datetime",
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "uniqueItems": True,
-                    "description": "Set of tags to filter by",
-                },
-                "include_segments": {
-                    "type": "boolean",
-                    "default": True,
-                    "description": "Whether to include video segments in results",
-                },
-                "include_related": {
-                    "type": "boolean",
-                    "default": False,
-                    "description": "Whether to include related videos",
-                },
-                "query_audio": {
-                    "type": "string",
-                    "description": "Audio search query",
-                },
-                "query_img": {
-                    "type": "string",
-                    "description": "Image search query",
+                    "created_after": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter videos created after this datetime",
+                    },
+                    "created_before": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Filter videos created before this datetime",
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "uniqueItems": True,
+                        "description": "Set of tags to filter by",
+                    },
+                    "include_segments": {
+                        "type": "boolean",
+                        "default": True,
+                        "description": "Whether to include video segments in results",
+                    },
+                    "include_related": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": "Whether to include related videos",
+                    },
+                    "query_audio": {
+                        "type": "string",
+                        "description": "Audio search query",
+                    },
+                    "query_img": {
+                        "type": "string",
+                        "description": "Image search query",
+                    },
                 },
             },
         ),
