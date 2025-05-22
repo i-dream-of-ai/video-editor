@@ -1,10 +1,7 @@
 from manim import *
-import numpy as np
 
 import sys
 import json
-import os
-from contextlib import redirect_stdout, redirect_stderr
 
 
 class LineGraphAnimation(Scene):

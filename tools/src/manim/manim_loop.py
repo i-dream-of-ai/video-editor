@@ -1,6 +1,5 @@
 from manim import *
 from manim.opengl import *
-import numpy as np
 
 from pyglet.window import key
 

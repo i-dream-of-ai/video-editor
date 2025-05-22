@@ -1,12 +1,10 @@
 import opentimelineio as otio
-import opentimelineio.opentime as otio_time
 from videojungle import ApiClient
 import os
 import sys
 import json
 import argparse
 import logging
-import subprocess
 
 logging.basicConfig(
     filename="app.log",  # Name of the log file
@@ -108,7 +106,7 @@ if __name__ == "__main__":
     # Now import DaVinciResolveScript
     try:
         import DaVinciResolveScript as dvr_script
-    except ImportError as e:
+    except ImportError:
         # print(f"Error importing DaVinciResolveScript: {e}")
         # print("Make sure DaVinci Resolve is installed correctly.")
         # Re-raise the exception or set dvr_script to None as a fallback

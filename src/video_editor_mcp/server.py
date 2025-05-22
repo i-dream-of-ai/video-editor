@@ -18,11 +18,9 @@ from mcp.server.models import InitializationOptions
 from pydantic import AnyUrl
 
 from transformers import AutoModel
-from videojungle import ApiClient, VideoFilters
+from videojungle import ApiClient
 
 from .search_local_videos import get_videos_by_keyword
-from .generate_charts import render_bar_chart
-from .generate_opentimeline import create_otio_timeline
 
 import numpy as np
 
@@ -467,7 +465,6 @@ async def handle_list_tools() -> list[types.Tool]:
                         "tags": {
                             "type": "array",
                             "items": {"type": "string"},
-                            "uniqueItems": True,
                             "description": "Set of tags to filter by",
                         },
                         "include_segments": {
@@ -531,27 +528,31 @@ async def handle_list_tools() -> list[types.Tool]:
                         },
                         "edit": {
                             "type": "array",
-                            "cuts": {
-                                "video_id": {
-                                    "type": "string",
-                                    "description": "Video UUID",
-                                },
-                                "video_start_time": {
-                                    "type": "string",
-                                    "description": "Clip start time in 00:00:00.000 format",
-                                },
-                                "video_end_time": {
-                                    "type": "string",
-                                    "description": "Clip end time in 00:00:00.000 format",
-                                },
-                                "type": {
-                                    "type": "string",
-                                    "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "video_id": {
+                                        "type": "string",
+                                        "description": "Video UUID",
+                                    },
+                                    "video_start_time": {
+                                        "type": "string",
+                                        "description": "Clip start time in 00:00:00.000 format",
+                                    },
+                                    "video_end_time": {
+                                        "type": "string",
+                                        "description": "Clip end time in 00:00:00.000 format",
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
+                                    },
                                 },
                             },
+                            "description": "Array of video clips to include in the edit",
                         },
                     },
-                    "required": ["edit", "cuts", "name", "project_id"],
+                    "required": ["edit", "name", "project_id"],
                 },
             ),
             types.Tool(
@@ -565,13 +566,23 @@ async def handle_list_tools() -> list[types.Tool]:
                         "video_id": {"type": "string"},
                         "edit": {
                             "type": "array",
-                            "cuts": {
-                                "video_start_time": "time",
-                                "video_end_time": "time",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "video_start_time": {
+                                        "type": "string",
+                                        "description": "Clip start time in 00:00:00.000 format",
+                                    },
+                                    "video_end_time": {
+                                        "type": "string",
+                                        "description": "Clip end time in 00:00:00.000 format",
+                                    },
+                                },
                             },
+                            "description": "Array of time segments to extract from the video",
                         },
                     },
-                    "required": ["edit", "project_id", "video_id", "cuts"],
+                    "required": ["edit", "project_id", "video_id"],
                 },
             ),
             types.Tool(
@@ -762,8 +773,9 @@ async def handle_list_tools() -> list[types.Tool]:
                     "query": {"type": "string", "description": "Text search query"},
                     "limit": {
                         "type": "integer",
-                        "default": 10,
+                        "default": 50,
                         "minimum": 1,
+                        "maximum": 100,
                         "description": "Maximum number of results to return per page",
                     },
                     "project_id": {
@@ -793,9 +805,9 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                     "items_per_page": {
                         "type": "integer",
-                        "default": 5,
+                        "default": 20,
                         "minimum": 1,
-                        "maximum": 20,
+                        "maximum": 50,
                         "description": "Number of items to show per page when paginating",
                     },
                     "created_after": {
@@ -811,7 +823,6 @@ async def handle_list_tools() -> list[types.Tool]:
                     "tags": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "uniqueItems": True,
                         "description": "Set of tags to filter by",
                     },
                     "include_segments": {
@@ -856,20 +867,31 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                     "edit": {
                         "type": "array",
-                        "cuts": {
-                            "video_id": {"type": "string", "description": "Video UUID"},
-                            "video_start_time": {
-                                "type": "string",
-                                "description": "Clip start time in 00:00:00.000 format",
-                            },
-                            "video_end_time": {
-                                "type": "string",
-                                "description": "Clip end time in 00:00:00.000 format",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "video_id": {
+                                    "type": "string",
+                                    "description": "Video UUID",
+                                },
+                                "video_start_time": {
+                                    "type": "string",
+                                    "description": "Clip start time in 00:00:00.000 format",
+                                },
+                                "video_end_time": {
+                                    "type": "string",
+                                    "description": "Clip end time in 00:00:00.000 format",
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
+                                },
                             },
                         },
+                        "description": "Array of video clips to include in the edit",
                     },
                 },
-                "required": ["edit", "cuts", "name", "project_id"],
+                "required": ["edit", "name", "project_id"],
             },
         ),
         types.Tool(
@@ -883,13 +905,23 @@ async def handle_list_tools() -> list[types.Tool]:
                     "video_id": {"type": "string"},
                     "edit": {
                         "type": "array",
-                        "cuts": {
-                            "video_start_time": "time",
-                            "video_end_time": "time",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "video_start_time": {
+                                    "type": "string",
+                                    "description": "Clip start time in 00:00:00.000 format",
+                                },
+                                "video_end_time": {
+                                    "type": "string",
+                                    "description": "Clip end time in 00:00:00.000 format",
+                                },
+                            },
                         },
+                        "description": "Array of time segments to extract from the video",
                     },
                 },
-                "required": ["edit", "project_id", "video_id", "cuts"],
+                "required": ["edit", "project_id", "video_id"],
             },
         ),
         types.Tool(
@@ -1016,9 +1048,9 @@ async def handle_list_tools() -> list[types.Tool]:
                     },
                     "items_per_page": {
                         "type": "integer",
-                        "default": 10,
+                        "default": 50,
                         "minimum": 1,
-                        "maximum": 50,
+                        "maximum": 100,
                         "description": "Number of items to show per page when paginating",
                     },
                     "asset_cache_id": {
@@ -1535,12 +1567,12 @@ async def handle_call_tool(
         # Add pagination info
         has_more = total_pages > 1
         if has_more:
-            response_text.append(f"\nNavigation options:")
+            response_text.append("\nNavigation options:")
             response_text.append(
                 f"Next page: call search-remote-videos with search_id='{new_search_id}' and page=2"
             )
             response_text.append(
-                f"\nTip: You can control items per page with the items_per_page parameter (default: 5, max: 20)"
+                "\nTip: You can control items per page with the items_per_page parameter (default: 5, max: 20)"
             )
         else:
             response_text.append("\nEnd of results.")
@@ -2084,12 +2116,12 @@ async def handle_call_tool(
             # Add pagination info
             has_more = total_pages > 1
             if has_more:
-                response_text.append(f"\nNavigation options:")
+                response_text.append("\nNavigation options:")
                 response_text.append(
                     f"Next page: call get-project-assets with asset_cache_id='{new_cache_id}' and page=2"
                 )
                 response_text.append(
-                    f"\nTip: You can control items per page with the items_per_page parameter (default: 10, max: 50)"
+                    "\nTip: You can control items per page with the items_per_page parameter (default: 10, max: 50)"
                 )
             else:
                 response_text.append("\nEnd of results.")
