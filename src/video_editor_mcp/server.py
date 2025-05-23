@@ -551,6 +551,41 @@ async def handle_list_tools() -> list[types.Tool]:
                             },
                             "description": "Array of video clips to include in the edit",
                         },
+                        "audio_asset": {
+                            "type": "object",
+                            "properties": {
+                                "audio_id": {
+                                    "type": "string",
+                                    "description": "Audio asset UUID",
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "description": "Audio file type (e.g., 'mp3', 'wav')",
+                                },
+                                "filename": {
+                                    "type": "string",
+                                    "description": "Audio file name",
+                                },
+                                "audio_start_time": {
+                                    "type": "string",
+                                    "description": "Audio start time in 00:00:00.000 format",
+                                },
+                                "audio_end_time": {
+                                    "type": "string",
+                                    "description": "Audio end time in 00:00:00.000 format",
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "description": "Optional URL for the audio file",
+                                },
+                                "audio_levels": {
+                                    "type": "array",
+                                    "description": "Optional audio level adjustments",
+                                    "items": {"type": "object"},
+                                },
+                            },
+                            "description": "Optional audio overlay for the video edit",
+                        },
                     },
                     "required": ["edit", "name", "project_id"],
                 },
@@ -889,6 +924,41 @@ async def handle_list_tools() -> list[types.Tool]:
                             },
                         },
                         "description": "Array of video clips to include in the edit",
+                    },
+                    "audio_asset": {
+                        "type": "object",
+                        "properties": {
+                            "audio_id": {
+                                "type": "string",
+                                "description": "Audio asset UUID",
+                            },
+                            "type": {
+                                "type": "string",
+                                "description": "Audio file type (e.g., 'mp3', 'wav')",
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "Audio file name",
+                            },
+                            "audio_start_time": {
+                                "type": "string",
+                                "description": "Audio start time in 00:00:00.000 format",
+                            },
+                            "audio_end_time": {
+                                "type": "string",
+                                "description": "Audio end time in 00:00:00.000 format",
+                            },
+                            "url": {
+                                "type": "string",
+                                "description": "Optional URL for the audio file",
+                            },
+                            "audio_levels": {
+                                "type": "array",
+                                "description": "Optional audio level adjustments",
+                                "items": {"type": "object"},
+                            },
+                        },
+                        "description": "Optional audio overlay for the video edit",
                     },
                 },
                 "required": ["edit", "name", "project_id"],
@@ -1620,6 +1690,7 @@ async def handle_call_tool(
         name = arguments.get("name")  # type: ignore
         open_editor = arguments.get("open_editor")
         resolution = arguments.get("resolution")
+        audio_asset = arguments.get("audio_asset")
         created = False
 
         logging.info(f"edit is: {edit} and the type is: {type(edit)}")
@@ -1666,6 +1737,21 @@ async def handle_call_tool(
 
         logging.info(f"updated edit is: {updated_edit}")
 
+        # Process audio asset if provided
+        audio_overlay = []
+        if audio_asset:
+            audio_overlay_item = {
+                "audio_id": audio_asset.get("audio_id", ""),
+                "type": audio_asset.get("type", "mp3"),
+                "filename": audio_asset.get("filename", ""),
+                "audio_start_time": audio_asset.get("audio_start_time", "00:00:00.000"),
+                "audio_end_time": audio_asset.get("audio_end_time", "00:00:00.000"),
+                "url": audio_asset.get("url", ""),
+                "audio_levels": audio_asset.get("audio_levels", []),
+            }
+            audio_overlay.append(audio_overlay_item)
+            logging.info(f"Audio overlay configured: {audio_overlay_item}")
+
         json_edit = {
             "video_edit_version": "1.0",
             "video_output_format": "mp4",
@@ -1673,7 +1759,7 @@ async def handle_call_tool(
             "video_output_fps": 60.0,
             "name": name,
             "video_output_filename": "output_video.mp4",
-            "audio_overlay": [],  # TODO: add this back in
+            "audio_overlay": audio_overlay,
             "video_series_sequential": updated_edit,
             "skip_rendering": True,
         }
