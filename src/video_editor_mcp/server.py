@@ -526,6 +526,11 @@ async def handle_list_tools() -> list[types.Tool]:
                             "type": "string",
                             "description": "Video resolution. Examples include '1920x1080', '1280x720'",
                         },
+                        "render_subtiles": {
+                            "type": "boolean",
+                            "description": "Whether to render subtitiles in the video edit",
+                            "default": True,
+                        },
                         "edit": {
                             "type": "array",
                             "items": {
@@ -599,6 +604,11 @@ async def handle_list_tools() -> list[types.Tool]:
                         "project_id": {"type": "string"},
                         "resolution": {"type": "string"},
                         "video_id": {"type": "string"},
+                        "render_subtiles": {
+                            "type": "boolean",
+                            "description": "Whether to render subtitiles in the video edit",
+                            "default": True,
+                        },
                         "edit": {
                             "type": "array",
                             "items": {
@@ -1107,8 +1117,14 @@ async def handle_list_tools() -> list[types.Tool]:
                     "asset_types": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'video_edit')",
-                        "default": ["user", "video", "image", "audio"],
+                        "description": "List of asset types to filter by (e.g. 'user', 'video', 'image', 'audio', 'generated_video', 'generated_audio', 'video_edit')",
+                        "default": [
+                            "user",
+                            "video",
+                            "image",
+                            "audio",
+                            "generated_audio",
+                        ],
                     },
                     "page": {
                         "type": "integer",
@@ -1691,6 +1707,7 @@ async def handle_call_tool(
         open_editor = arguments.get("open_editor")
         resolution = arguments.get("resolution")
         audio_asset = arguments.get("audio_asset")
+        subtitles = arguments.get("subtitles", True)
         created = False
 
         logging.info(f"edit is: {edit} and the type is: {type(edit)}")
@@ -1751,7 +1768,8 @@ async def handle_call_tool(
             }
             audio_overlay.append(audio_overlay_item)
             logging.info(f"Audio overlay configured: {audio_overlay_item}")
-
+        else:
+            subtitles = False
         json_edit = {
             "video_edit_version": "1.0",
             "video_output_format": "mp4",
@@ -1762,6 +1780,7 @@ async def handle_call_tool(
             "audio_overlay": audio_overlay,
             "video_series_sequential": updated_edit,
             "skip_rendering": True,
+            "subtitle_from_audio_overlay": subtitles,
         }
 
         try:
