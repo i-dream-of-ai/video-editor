@@ -552,6 +552,19 @@ async def handle_list_tools() -> list[types.Tool]:
                                         "type": "string",
                                         "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
                                     },
+                                    "audio_levels": {
+                                        "type": "array",
+                                        "description": "Optional audio level adjustments for this clip",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "audio_level": {
+                                                    "type": "string",
+                                                    "description": "Audio level (0.0 to 1.0)",
+                                                }
+                                            },
+                                        },
+                                    },
                                 },
                             },
                             "description": "Array of video clips to include in the edit",
@@ -678,6 +691,19 @@ async def handle_list_tools() -> list[types.Tool]:
                                     "video_end_time": {
                                         "type": "string",
                                         "description": "Clip end time in 00:00:00.000 format",
+                                    },
+                                    "audio_levels": {
+                                        "type": "array",
+                                        "description": "Optional audio level adjustments for this clip",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "audio_level": {
+                                                    "type": "string",
+                                                    "description": "Audio level (0.0 to 1.0)",
+                                                }
+                                            },
+                                        },
                                     },
                                 },
                             },
@@ -931,6 +957,19 @@ async def handle_list_tools() -> list[types.Tool]:
                                     "type": "string",
                                     "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
                                 },
+                                "audio_levels": {
+                                    "type": "array",
+                                    "description": "Optional audio level adjustments for this clip",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "audio_level": {
+                                                "type": "string",
+                                                "description": "Audio level (0.0 to 1.0)",
+                                            }
+                                        },
+                                    },
+                                },
                             },
                         },
                         "description": "Array of video clips to include in the edit",
@@ -1056,6 +1095,19 @@ async def handle_list_tools() -> list[types.Tool]:
                                 "type": {
                                     "type": "string",
                                     "description": "Type of asset ('videofile' for video files, or 'user' for project specific assets)",
+                                },
+                                "audio_levels": {
+                                    "type": "array",
+                                    "description": "Optional audio level adjustments for this clip",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "audio_level": {
+                                                "type": "string",
+                                                "description": "Audio level (0.0 to 1.0)",
+                                            }
+                                        },
+                                    },
                                 },
                             },
                         },
@@ -1735,22 +1787,28 @@ async def handle_call_tool(
                 f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
             )
 
-        updated_edit = [
-            {
-                "video_id": cut["video_id"],
-                "video_start_time": cut["video_start_time"],
-                "video_end_time": cut["video_end_time"],
-                "type": cut["type"],
-                "audio_levels": [
-                    {
-                        "audio_level": 0.5,
-                        "start_time": cut["video_start_time"],
-                        "end_time": cut["video_end_time"],
-                    }
-                ],
-            }
-            for cut in edit
-        ]
+        updated_edit = []
+        for cut in edit:
+            # Get the audio level for this clip (default to 0.5)
+            audio_level_value = "0.5"
+            if "audio_levels" in cut and len(cut["audio_levels"]) > 0:
+                audio_level_value = cut["audio_levels"][0].get("audio_level", "0.5")
+
+            updated_edit.append(
+                {
+                    "video_id": cut["video_id"],
+                    "video_start_time": cut["video_start_time"],
+                    "video_end_time": cut["video_end_time"],
+                    "type": cut["type"],
+                    "audio_levels": [
+                        {
+                            "audio_level": audio_level_value,
+                            "start_time": cut["video_start_time"],
+                            "end_time": cut["video_end_time"],
+                        }
+                    ],
+                }
+            )
 
         logging.info(f"updated edit is: {updated_edit}")
 
@@ -2002,22 +2060,30 @@ async def handle_call_tool(
         # Process video clips if provided
         updated_video_series = None
         if video_series_sequential:
-            updated_video_series = [
-                {
-                    "video_id": clip["video_id"],
-                    "video_start_time": clip["video_start_time"],
-                    "video_end_time": clip["video_end_time"],
-                    "type": clip["type"],
-                    "audio_levels": [
-                        {
-                            "audio_level": 0.5,
-                            "start_time": clip["video_start_time"],
-                            "end_time": clip["video_end_time"],
-                        }
-                    ],
-                }
-                for clip in video_series_sequential
-            ]
+            updated_video_series = []
+            for clip in video_series_sequential:
+                # Get the audio level for this clip (default to 0.5)
+                audio_level_value = "0.5"
+                if "audio_levels" in clip and len(clip["audio_levels"]) > 0:
+                    audio_level_value = clip["audio_levels"][0].get(
+                        "audio_level", "0.5"
+                    )
+
+                updated_video_series.append(
+                    {
+                        "video_id": clip["video_id"],
+                        "video_start_time": clip["video_start_time"],
+                        "video_end_time": clip["video_end_time"],
+                        "type": clip["type"],
+                        "audio_levels": [
+                            {
+                                "audio_level": audio_level_value,
+                                "start_time": clip["video_start_time"],
+                                "end_time": clip["video_end_time"],
+                            }
+                        ],
+                    }
+                )
 
         # Create an empty dictionary without type annotations
         update_json = dict()
