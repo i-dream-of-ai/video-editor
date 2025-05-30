@@ -5,6 +5,7 @@ import sys
 import json
 import argparse
 import logging
+import requests
 
 logging.basicConfig(
     filename="app.log",  # Name of the log file
@@ -37,46 +38,152 @@ def create_rational_time(timecode, fps=24.0):
     return otio.opentime.RationalTime(frames, fps)
 
 
+def download_asset(asset_id, asset_type, download_dir="downloads"):
+    """Download an asset using either the assets API or video files API based on type"""
+    try:
+        # Determine which API to use based on asset type
+        if asset_type in ["user", "audio", "mp3", "wav", "aac", "m4a"]:
+            # Use assets API for user uploads and audio files
+            asset = vj.assets.get(asset_id)
+            if not asset.download_url:
+                logging.error(f"No download URL for asset {asset_id}")
+                return None
+            download_url = asset.download_url
+            filename = (
+                asset.name if hasattr(asset, "name") and asset.name else str(asset_id)
+            )
+        else:
+            # Use video files API for video files
+            video = vj.video_files.get(asset_id)
+            if not video.download_url:
+                logging.error(f"No download URL for video {asset_id}")
+                return None
+            download_url = video.download_url
+            filename = (
+                video.name if hasattr(video, "name") and video.name else str(asset_id)
+            )
+
+        # Determine file extension based on asset type
+        ext_map = {
+            "mp3": ".mp3",
+            "wav": ".wav",
+            "aac": ".aac",
+            "m4a": ".m4a",
+            "user": ".mp4",  # Default for user videos
+            "video": ".mp4",
+            "audio": ".mp3",  # Default for generic audio
+        }
+        ext = ext_map.get(asset_type, ".mp4")
+
+        # Remove any existing extension and add the correct one
+        if "." in filename:
+            filename = filename.rsplit(".", 1)[0]
+        local_file = os.path.join(download_dir, f"{filename}{ext}")
+
+        # Check if file already exists
+        if os.path.exists(local_file):
+            logging.info(f"Asset already exists at {local_file}, skipping download")
+            return local_file
+
+        # Download the file
+        if asset_type in ["user", "audio", "mp3", "wav", "aac", "m4a"]:
+            # Use requests for assets API downloads
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status()
+
+            with open(local_file, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        else:
+            # Use video files download method
+            lf = vj.video_files.download(asset_id, local_file)
+            logging.info(f"Downloaded video to {lf}")
+            return lf
+
+        logging.info(f"Downloaded asset {asset_id} to {local_file}")
+        return local_file
+
+    except Exception as e:
+        logging.error(f"Error downloading asset {asset_id}: {e}")
+        return None
+
+
 def create_otio_timeline(
     edit_spec, filename, download_dir="downloads"
 ) -> otio.schema.Timeline:
     if not os.path.exists(download_dir):
         os.makedirs(download_dir)
-    timeline = otio.schema.Timeline()
-    track = otio.schema.Track(name=edit_spec["name"])
-    timeline.tracks.append(track)
 
+    timeline = otio.schema.Timeline(name=edit_spec.get("name", "Timeline"))
+
+    # Create video track
+    video_track = otio.schema.Track(name="V1", kind=otio.schema.TrackKind.Video)
+    timeline.tracks.append(video_track)
+
+    # Create audio track if there are audio overlays
+    audio_track = None
+    if "audio_overlay" in edit_spec and edit_spec["audio_overlay"]:
+        audio_track = otio.schema.Track(name="A1", kind=otio.schema.TrackKind.Audio)
+        timeline.tracks.append(audio_track)
+
+    # Process video clips
     for cut in edit_spec["video_series_sequential"]:
-        # TODO: fix with asset call too
-        video = vj.video_files.get(cut["video_id"])
-        local_file = os.path.join(download_dir, f"{video.name}.mp4")
-        os.makedirs(download_dir, exist_ok=True)
+        asset_type = cut.get("type", "video")
+        local_file = download_asset(cut["video_id"], asset_type, download_dir)
 
-        if not video.download_url:
-            logging.info(f"Skipping video {video.id} - no download URL provided")
+        if not local_file:
             continue
 
-        # Check if file already exists
-        if os.path.exists(local_file):
-            logging.info(f"Video already exists at {local_file}, skipping download")
-            lf = local_file
-        else:
-            lf = vj.video_files.download(video.id, local_file)
-            logging.info(f"Downloaded video to {lf}")
-
-        fps = video.fps if video.fps else 24.0
+        fps = edit_spec.get("video_output_fps", 24.0)
         start_time = create_rational_time(cut["video_start_time"], fps)
         end_time = create_rational_time(cut["video_end_time"], fps)
-        # print(lf)
 
         clip = otio.schema.Clip(
-            name=f"clip_{edit_spec['name']}",
+            name=f"clip_{cut['video_id']}",
             media_reference=otio.schema.ExternalReference(
                 target_url=os.path.abspath(local_file)
             ),
             source_range=otio.opentime.TimeRange(start_time, (end_time - start_time)),
         )
-        track.append(clip)
+
+        # TODO: Add audio level metadata if needed
+        if "audio_levels" in cut and cut["audio_levels"]:
+            # OpenTimelineIO doesn't have direct audio level support
+            # This would need to be handled in the editing software
+            clip.metadata["audio_levels"] = cut["audio_levels"]
+
+        video_track.append(clip)
+
+    # Process audio overlays
+    if audio_track and "audio_overlay" in edit_spec:
+        for audio_item in edit_spec["audio_overlay"]:
+            audio_type = audio_item.get("type", "mp3")
+            local_audio_file = download_asset(
+                audio_item["audio_id"], audio_type, download_dir
+            )
+
+            if not local_audio_file:
+                continue
+
+            fps = edit_spec.get("video_output_fps", 24.0)
+            audio_start = create_rational_time(audio_item["audio_start_time"], fps)
+            audio_end = create_rational_time(audio_item["audio_end_time"], fps)
+
+            audio_clip = otio.schema.Clip(
+                name=f"audio_{audio_item['audio_id']}",
+                media_reference=otio.schema.ExternalReference(
+                    target_url=os.path.abspath(local_audio_file)
+                ),
+                source_range=otio.opentime.TimeRange(
+                    audio_start, (audio_end - audio_start)
+                ),
+            )
+
+            # Add audio level metadata if present
+            if "audio_levels" in audio_item and audio_item["audio_levels"]:
+                audio_clip.metadata["audio_levels"] = audio_item["audio_levels"]
+
+            audio_track.append(audio_clip)
 
     otio.adapters.write_to_file(timeline, filename)
     logging.info(f"OTIO timeline saved to {filename}")
