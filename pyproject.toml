@@ -1,6 +1,6 @@
 [project]
 name = "video-editor-mcp"
-version = "0.1.43"
+version = "0.1.46"
 description = "Video Jungle MCP Server for Adding, Analysing, Searching, and Editing Videos"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,7 @@ dependencies = [
  "thefuzz>=0.22.1",
  "timm>=1.0.12",
  "torch==2.5.1",
+ "torchvision==0.20.1",
  "transformers[torch]==4.47.1",
  "videojungle>=0.1.66",
 ]
