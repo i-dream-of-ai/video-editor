@@ -2304,8 +2304,11 @@ async def handle_call_tool(
             raise ValueError(f"Error retrieving project assets: {str(e)}")
 
     if (
-        (name == "create-video-bar-chart-from-two-axis-data")
-        or (name == "create-video-line-chart-from-two-axis-data")
+        name
+        in [
+            "create-video-bar-chart-from-two-axis-data",
+            "create-video-line-chart-from-two-axis-data",
+        ]
         and arguments
     ):
         x_values = arguments.get("x_values")
@@ -2329,54 +2332,75 @@ async def handle_call_tool(
         if not y_axis_safe:
             raise ValueError("Y values are not valid")
 
-        # Render the bar chart
-        data = {
-            "x_values": x_values,
-            "y_values": y_values,
-            "x_label": x_label,
-            "y_label": y_label,
-            "title": title,
-            "filename": filename,
-        }
-        with open("chart_data.json", "w") as f:
-            json.dump(data, f, indent=4)
+        # Validate data and prepare for chart generation
+        try:
+            # Ensure output directory exists
+            output_dir = os.path.join(os.getcwd(), "media", "videos", "720p30")
+            os.makedirs(output_dir, exist_ok=True)
 
-        file_path = os.path.join(os.getcwd(), "media/videos/720p30/", filename)
+            # Prepare data for chart generation
+            data = {
+                "x_values": x_values,
+                "y_values": y_values,
+                "x_label": x_label,
+                "y_label": y_label,
+                "title": title,
+                "filename": filename,
+            }
 
-        if name == "create-video-bar-chart-from-two-axis-data":
-            subprocess.Popen(
-                [
-                    "uv",
-                    "run",
-                    "src/video_editor_mcp/generate_charts.py",
-                    "chart_data.json",
-                    "bar",
-                ]
+            # Write data to temporary file
+            chart_data_path = os.path.join(os.getcwd(), "chart_data.json")
+            with open(chart_data_path, "w") as f:
+                json.dump(data, f, indent=4)
+
+            file_path = os.path.join(output_dir, filename)
+
+            # Determine chart type
+            chart_type = (
+                "bar" if name == "create-video-bar-chart-from-two-axis-data" else "line"
             )
 
+            # Get the script path
+            script_path = os.path.join(os.path.dirname(__file__), "generate_charts.py")
+
+            # Run the chart generation script
+            env = os.environ.copy()
+            env["PYTHONPATH"] = os.getcwd()
+
+            # Use subprocess.run with proper error handling instead of Popen
+            result = subprocess.run(
+                ["uv", "run", "python", script_path, chart_data_path, chart_type],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=60,  # 60 second timeout
+            )
+
+            if result.returncode != 0:
+                error_msg = f"Chart generation failed: {result.stderr}"
+                logging.error(error_msg)
+                raise RuntimeError(error_msg)
+
+            # Clean up temporary file
+            try:
+                os.remove(chart_data_path)
+            except:
+                pass
+
+            chart_type_display = "Bar chart" if chart_type == "bar" else "Line chart"
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Bar chart video  generated.\nSaved to {file_path}",
+                    text=f"{chart_type_display} video generation started.\nOutput will be saved to {file_path}",
                 )
             ]
 
-        elif name == "create-video-line-chart-from-two-axis-data":
-            subprocess.Popen(
-                [
-                    "uv",
-                    "run",
-                    "src/video_editor_mcp/generate_charts.py",
-                    "chart_data.json",
-                    "line",
-                ]
-            )
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"Line chart video  generated.\nSaved to {file_path}",
-                )
-            ]
+        except subprocess.TimeoutExpired:
+            logging.error("Chart generation timed out")
+            raise RuntimeError("Chart generation timed out after 60 seconds")
+        except Exception as e:
+            logging.error(f"Error generating chart: {str(e)}")
+            raise RuntimeError(f"Failed to generate chart: {str(e)}")
 
 
 async def main():

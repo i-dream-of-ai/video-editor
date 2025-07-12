@@ -273,48 +273,91 @@ def render_bar_chart(
 
 # Example usage
 if __name__ == "__main__":
-    # Sample data
-    input_json_file = sys.argv[1]
-    chart_type = sys.argv[2]
-    with open(input_json_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if "x_values" not in data or "y_values" not in data:
-        raise ValueError("Invalid JSON data format")
+    try:
+        # Check command line arguments
+        if len(sys.argv) < 3:
+            print(
+                "Usage: python generate_charts.py <input_json_file> <chart_type>",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
-    x_values = data["x_values"]
-    y_values = data["y_values"]
-    x_label = data["x_label"] or "Categories"
-    y_label = data["y_label"] or "Values"
-    title = data["title"]
-    filename = data["filename"]
+        # Sample data
+        input_json_file = sys.argv[1]
+        chart_type = sys.argv[2]
 
-    config.verbosity = "ERROR"
-    config.pixel_height = 720
-    config.pixel_width = 1280
-    config.frame_height = 8
-    config.frame_width = 14
-    config.output_file = filename
-    config.preview = True
-    config.quality = "medium_quality"
-    # Configure scene settings
+        # Validate chart type
+        if chart_type not in ["bar", "line"]:
+            print(
+                f"Invalid chart type: {chart_type}. Use 'bar' or 'line'.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
-    if chart_type == "bar":
-        scene = BarChartAnimation(
-            x_values=x_values,
-            y_values=y_values,
-            x_label=x_label,
-            y_label=y_label,
-            title=title,
-        )
-    elif chart_type == "line":
-        scene = LineGraphAnimation(
-            x_values=x_values,
-            y_values=y_values,
-            x_label=x_label,
-            y_label=y_label,
-            title=title,
-        )
-    else:
-        raise ValueError("Invalid chart type. Use 'bar' or 'line'")
+        # Read and validate JSON data
+        try:
+            with open(input_json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            print(f"Input file not found: {input_json_file}", file=sys.stderr)
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Invalid JSON in input file: {e}", file=sys.stderr)
+            sys.exit(1)
 
-    scene.render()
+        if "x_values" not in data or "y_values" not in data:
+            print(
+                "Invalid JSON data format: missing x_values or y_values",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        x_values = data["x_values"]
+        y_values = data["y_values"]
+        x_label = data.get("x_label", "Categories")
+        y_label = data.get("y_label", "Values")
+        title = data.get("title", "Chart")
+        filename = data.get("filename", f"{chart_type}_chart.mp4")
+
+        # Validate data lengths match
+        if len(x_values) != len(y_values):
+            print(
+                f"Error: x_values length ({len(x_values)}) does not match y_values length ({len(y_values)})",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        # Configure manim settings
+        config.verbosity = "ERROR"
+        config.pixel_height = 720
+        config.pixel_width = 1280
+        config.frame_height = 8
+        config.frame_width = 14
+        config.output_file = filename
+        config.preview = False  # Don't auto-open video to prevent hanging
+        config.quality = "medium_quality"
+
+        # Create and render the appropriate scene
+        if chart_type == "bar":
+            scene = BarChartAnimation(
+                x_values=x_values,
+                y_values=y_values,
+                x_label=x_label,
+                y_label=y_label,
+                title=title,
+            )
+        else:  # chart_type == "line"
+            scene = LineGraphAnimation(
+                x_values=x_values,
+                y_values=y_values,
+                x_label=x_label,
+                y_label=y_label,
+                title=title,
+            )
+
+        scene.render()
+        print(f"Successfully generated {chart_type} chart: {filename}")
+
+    except Exception as e:
+        print(f"Error generating chart: {str(e)}", file=sys.stderr)
+        sys.exit(1)
