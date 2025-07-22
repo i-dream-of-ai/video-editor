@@ -1892,14 +1892,14 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} with id '{proj.id}' and created edit {edit} with raw edit info: {updated_edit}",
+                    text=f"Created new project {proj.name} with id '{proj.id}' with the new edit id: {edit['edit_id']} viewable at this url: https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}",
                 )
             ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit in existing project {proj.name} with id '{proj.id}' with generated asset info: {edit} and raw edit info: {updated_edit}",
+                text=f"Generated edit in existing project {proj.name} with id '{proj.id}' with the new edit id: {edit['edit_id']} viewable at this url: https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}",
             )
         ]
 
@@ -1998,14 +1998,14 @@ async def handle_call_tool(
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Created new project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
+                    text=f"Created new project {proj.name} with project id '{proj.id}' viewable at this url: https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}",
                 )
             ]
 
         return [
             types.TextContent(
                 type="text",
-                text=f"Generated edit with id '{edit.id}' in project {proj.name} with project id '{proj.id}' and raw edit info: {edit}",
+                text=f"Generated edit with id '{edit['edit_id']}' in project {proj.name} with project id '{proj.id}' viewable at this url: https://app.video-jungle.com/projects/{proj.id}/edits/{edit['edit_id']}",
             )
         ]
 
@@ -2129,7 +2129,7 @@ async def handle_call_tool(
         return [
             types.TextContent(
                 type="text",
-                text=f"Updated edit {edit_id} in project {proj.name} with changes: {update_json}",
+                text=f"Updated edit {edit_id} in project {proj.name} at url https://app.video-jungle.com/projects/{project_id}/edits/{edit_id} with changes: {update_json}",
             )
         ]
 
