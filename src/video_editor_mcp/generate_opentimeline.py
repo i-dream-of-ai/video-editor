@@ -152,6 +152,15 @@ def create_otio_timeline(
             # This would need to be handled in the editing software
             clip.metadata["audio_levels"] = cut["audio_levels"]
 
+        # Add crop metadata if present
+        if "crop" in cut and cut["crop"]:
+            # Store crop settings in metadata for the editing software to interpret
+            clip.metadata["crop"] = {
+                "zoom": cut["crop"].get("zoom", 1.0),
+                "position_x": cut["crop"].get("position_x", 0.0),
+                "position_y": cut["crop"].get("position_y", 0.0),
+            }
+
         video_track.append(clip)
 
     # Process audio overlays

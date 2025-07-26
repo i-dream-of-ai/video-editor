@@ -565,6 +565,33 @@ async def handle_list_tools() -> list[types.Tool]:
                                             },
                                         },
                                     },
+                                    "crop": {
+                                        "type": "object",
+                                        "description": "Optional crop/zoom settings for this video segment",
+                                        "properties": {
+                                            "zoom": {
+                                                "type": "number",
+                                                "minimum": 0.1,
+                                                "maximum": 10.0,
+                                                "default": 1.0,
+                                                "description": "Zoom factor (1.0 = 100%, 1.5 = 150%, etc.)",
+                                            },
+                                            "position_x": {
+                                                "type": "number",
+                                                "minimum": -1.0,
+                                                "maximum": 1.0,
+                                                "default": 0.0,
+                                                "description": "Horizontal offset from center (-1.0 to 1.0)",
+                                            },
+                                            "position_y": {
+                                                "type": "number",
+                                                "minimum": -1.0,
+                                                "maximum": 1.0,
+                                                "default": 0.0,
+                                                "description": "Vertical offset from center (-1.0 to 1.0)",
+                                            },
+                                        },
+                                    },
                                 },
                             },
                             "description": "Array of video clips to include in the edit",
@@ -702,6 +729,33 @@ async def handle_list_tools() -> list[types.Tool]:
                                                     "type": "string",
                                                     "description": "Audio level (0.0 to 1.0)",
                                                 }
+                                            },
+                                        },
+                                    },
+                                    "crop": {
+                                        "type": "object",
+                                        "description": "Optional crop/zoom settings for this video segment",
+                                        "properties": {
+                                            "zoom": {
+                                                "type": "number",
+                                                "minimum": 0.1,
+                                                "maximum": 10.0,
+                                                "default": 1.0,
+                                                "description": "Zoom factor (1.0 = 100%, 1.5 = 150%, etc.)",
+                                            },
+                                            "position_x": {
+                                                "type": "number",
+                                                "minimum": -1.0,
+                                                "maximum": 1.0,
+                                                "default": 0.0,
+                                                "description": "Horizontal offset from center (-1.0 to 1.0)",
+                                            },
+                                            "position_y": {
+                                                "type": "number",
+                                                "minimum": -1.0,
+                                                "maximum": 1.0,
+                                                "default": 0.0,
+                                                "description": "Vertical offset from center (-1.0 to 1.0)",
                                             },
                                         },
                                     },
@@ -970,6 +1024,33 @@ async def handle_list_tools() -> list[types.Tool]:
                                         },
                                     },
                                 },
+                                "crop": {
+                                    "type": "object",
+                                    "description": "Optional crop/zoom settings for this video segment",
+                                    "properties": {
+                                        "zoom": {
+                                            "type": "number",
+                                            "minimum": 0.1,
+                                            "maximum": 10.0,
+                                            "default": 1.0,
+                                            "description": "Zoom factor (1.0 = 100%, 1.5 = 150%, etc.)",
+                                        },
+                                        "position_x": {
+                                            "type": "number",
+                                            "minimum": -1.0,
+                                            "maximum": 1.0,
+                                            "default": 0.0,
+                                            "description": "Horizontal offset from center (-1.0 to 1.0)",
+                                        },
+                                        "position_y": {
+                                            "type": "number",
+                                            "minimum": -1.0,
+                                            "maximum": 1.0,
+                                            "default": 0.0,
+                                            "description": "Vertical offset from center (-1.0 to 1.0)",
+                                        },
+                                    },
+                                },
                             },
                         },
                         "description": "Array of video clips to include in the edit",
@@ -1106,6 +1187,33 @@ async def handle_list_tools() -> list[types.Tool]:
                                                 "type": "string",
                                                 "description": "Audio level (0.0 to 1.0)",
                                             }
+                                        },
+                                    },
+                                },
+                                "crop": {
+                                    "type": "object",
+                                    "description": "Optional crop/zoom settings for this video segment",
+                                    "properties": {
+                                        "zoom": {
+                                            "type": "number",
+                                            "minimum": 0.1,
+                                            "maximum": 10.0,
+                                            "default": 1.0,
+                                            "description": "Zoom factor (1.0 = 100%, 1.5 = 150%, etc.)",
+                                        },
+                                        "position_x": {
+                                            "type": "number",
+                                            "minimum": -1.0,
+                                            "maximum": 1.0,
+                                            "default": 0.0,
+                                            "description": "Horizontal offset from center (-1.0 to 1.0)",
+                                        },
+                                        "position_y": {
+                                            "type": "number",
+                                            "minimum": -1.0,
+                                            "maximum": 1.0,
+                                            "default": 0.0,
+                                            "description": "Vertical offset from center (-1.0 to 1.0)",
                                         },
                                     },
                                 },
@@ -1794,21 +1902,25 @@ async def handle_call_tool(
             if "audio_levels" in cut and len(cut["audio_levels"]) > 0:
                 audio_level_value = cut["audio_levels"][0].get("audio_level", "0.5")
 
-            updated_edit.append(
-                {
-                    "video_id": cut["video_id"],
-                    "video_start_time": cut["video_start_time"],
-                    "video_end_time": cut["video_end_time"],
-                    "type": cut["type"],
-                    "audio_levels": [
-                        {
-                            "audio_level": audio_level_value,
-                            "start_time": cut["video_start_time"],
-                            "end_time": cut["video_end_time"],
-                        }
-                    ],
-                }
-            )
+            clip_data = {
+                "video_id": cut["video_id"],
+                "video_start_time": cut["video_start_time"],
+                "video_end_time": cut["video_end_time"],
+                "type": cut["type"],
+                "audio_levels": [
+                    {
+                        "audio_level": audio_level_value,
+                        "start_time": cut["video_start_time"],
+                        "end_time": cut["video_end_time"],
+                    }
+                ],
+            }
+
+            # Add crop settings if provided
+            if "crop" in cut and cut["crop"]:
+                clip_data["crop"] = cut["crop"]
+
+            updated_edit.append(clip_data)
 
         logging.info(f"updated edit is: {updated_edit}")
 
@@ -2069,21 +2181,25 @@ async def handle_call_tool(
                         "audio_level", "0.5"
                     )
 
-                updated_video_series.append(
-                    {
-                        "video_id": clip["video_id"],
-                        "video_start_time": clip["video_start_time"],
-                        "video_end_time": clip["video_end_time"],
-                        "type": clip["type"],
-                        "audio_levels": [
-                            {
-                                "audio_level": audio_level_value,
-                                "start_time": clip["video_start_time"],
-                                "end_time": clip["video_end_time"],
-                            }
-                        ],
-                    }
-                )
+                clip_data = {
+                    "video_id": clip["video_id"],
+                    "video_start_time": clip["video_start_time"],
+                    "video_end_time": clip["video_end_time"],
+                    "type": clip["type"],
+                    "audio_levels": [
+                        {
+                            "audio_level": audio_level_value,
+                            "start_time": clip["video_start_time"],
+                            "end_time": clip["video_end_time"],
+                        }
+                    ],
+                }
+
+                # Add crop settings if provided
+                if "crop" in clip and clip["crop"]:
+                    clip_data["crop"] = clip["crop"]
+
+                updated_video_series.append(clip_data)
 
         # Create an empty dictionary without type annotations
         update_json = dict()
