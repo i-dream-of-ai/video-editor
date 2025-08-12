@@ -1711,7 +1711,8 @@ async def handle_call_tool(
         if query:
             search_params["query"] = query
         if project_id:
-            search_params["project_id"] = project_id
+            # Convert UUID to string if it's not already a string
+            search_params["project_id"] = str(project_id)
 
         embedding_results = []
         embedding_search_formatted = []
