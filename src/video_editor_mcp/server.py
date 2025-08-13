@@ -46,12 +46,14 @@ if not VJ_API_KEY:
         with open(".env", "r") as f:
             for line in f:
                 if "VJ_API_KEY" in line:
-                    VJ_API_KEY = line.split("=")[1]
+                    VJ_API_KEY = line.split("=")[1].strip()
     except Exception:
         raise Exception(
             "VJ_API_KEY environment variable is required or a .env file with the key is required"
         )
-    raise Exception("VJ_API_KEY environment variable is required")
+
+    if not VJ_API_KEY:
+        raise Exception("VJ_API_KEY environment variable is required")
 
 vj = ApiClient(VJ_API_KEY)
 
@@ -1669,6 +1671,7 @@ async def handle_call_tool(
             ]
 
         # This is a new search request
+        logging.info(f"search-remote-videos received arguments: {arguments}")
         query = arguments.get("query")
         limit = arguments.get("limit", 10)
         project_id = arguments.get("project_id")
@@ -1755,8 +1758,28 @@ async def handle_call_tool(
                     embedding_search_formatted = []
 
         # Get regular search results
-        videos = vj.video_files.search(**search_params)
+        logging.info(
+            f"Search params being passed to vj.video_files.search: {search_params}"
+        )
+        logging.info(f"VJ client: {vj}, API key present: {bool(VJ_API_KEY)}")
+        try:
+            videos = vj.video_files.search(**search_params)
+            logging.info(f"Search returned {len(videos)} videos")
+            if videos:
+                logging.info(f"First video: {videos[0]}")
+        except Exception as e:
+            logging.error(f"Error in vj.video_files.search: {e}")
+            videos = []
         logging.info(f"num videos are: {len(videos)}")
+
+        # If no results found, return a helpful message
+        if len(videos) == 0 and not embedding_results:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"No videos found matching query '{query}' with the specified filters. Try broadening your search criteria.",
+                )
+            ]
 
         # If only a few results, return them directly without pagination
         if len(videos) <= 3 and len(videos) >= 1 and not embedding_results:
