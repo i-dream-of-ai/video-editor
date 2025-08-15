@@ -544,11 +544,11 @@ async def handle_list_tools() -> list[types.Tool]:
                                     },
                                     "video_start_time": {
                                         "type": "string",
-                                        "description": "Clip start time in 00:00:00.000 format",
+                                        "description": "Clip start time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                     "video_end_time": {
                                         "type": "string",
-                                        "description": "Clip end time in 00:00:00.000 format",
+                                        "description": "Clip end time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                     "type": {
                                         "type": "string",
@@ -615,11 +615,11 @@ async def handle_list_tools() -> list[types.Tool]:
                                 },
                                 "audio_start_time": {
                                     "type": "string",
-                                    "description": "Audio start time in 00:00:00.000 format",
+                                    "description": "Audio start time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                 },
                                 "audio_end_time": {
                                     "type": "string",
-                                    "description": "Audio end time in 00:00:00.000 format",
+                                    "description": "Audio end time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                 },
                                 "url": {
                                     "type": "string",
@@ -658,11 +658,11 @@ async def handle_list_tools() -> list[types.Tool]:
                                 "properties": {
                                     "video_start_time": {
                                         "type": "string",
-                                        "description": "Clip start time in 00:00:00.000 format",
+                                        "description": "Clip start time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                     "video_end_time": {
                                         "type": "string",
-                                        "description": "Clip end time in 00:00:00.000 format",
+                                        "description": "Clip end time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                 },
                             },
@@ -715,11 +715,11 @@ async def handle_list_tools() -> list[types.Tool]:
                                     },
                                     "video_start_time": {
                                         "type": "string",
-                                        "description": "Clip start time in 00:00:00.000 format",
+                                        "description": "Clip start time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                     "video_end_time": {
                                         "type": "string",
-                                        "description": "Clip end time in 00:00:00.000 format",
+                                        "description": "Clip end time in HH:MM:SS.mmm format (e.g., '00:01:30.500' or '01:05:22.123'). Hours, minutes, seconds, and 3-digit milliseconds are required.",
                                     },
                                     "audio_levels": {
                                         "type": "array",
@@ -1913,7 +1913,7 @@ async def handle_call_tool(
 
         try:
             w, h = resolution.split("x")
-            _ = f"{int(w)}x{int(w)}"
+            _ = f"{int(w)}x{int(h)}"
         except Exception as e:
             raise ValueError(
                 f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
@@ -2060,7 +2060,7 @@ async def handle_call_tool(
 
         try:
             w, h = resolution.split("x")
-            _ = f"{int(w)}x{int(w)}"
+            _ = f"{int(w)}x{int(h)}"
         except Exception as e:
             raise ValueError(
                 f"Resolution must be in the format 'widthxheight' where width and height are integers: {e}"
