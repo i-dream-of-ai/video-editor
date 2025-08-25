@@ -1996,33 +1996,6 @@ async def handle_call_tool(
         )
         global BROWSER_OPEN
         BROWSER_OPEN = True
-        # the following generates an edit for opentimeline, allowing you to open it in
-        # a desktop video editor like final cut pro, etc.
-        """
-        try:
-            original_dir = os.getcwd()
-            os.chdir("./tools")
-            logging.info(f"in directory: {os.getcwd()}")
-            # don't block, because this might take a while
-            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
-            logging.info(
-                f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}"
-            )
-            subprocess.Popen(
-                [
-                    "uv",
-                    "run",
-                    "viewer",
-                    edit["asset_id"],
-                    f"video-edit-{project}.mp4",
-                    proj.name,
-                ],
-                env=env_vars,
-            )
-            os.chdir(original_dir)
-        except Exception as e:
-            logging.info(f"Error running viewer: {e}")
-        """
         if created:
             # we created a new project so let the user / LLM know
             return [
@@ -2107,27 +2080,6 @@ async def handle_call_tool(
         except Exception as e:
             logging.error(f"Error rendering edit: {e}")
         logging.info(f"edit is: {edit}")
-        try:
-            os.chdir("./tools")
-            logging.info(f"in directory: {os.getcwd()}")
-            # don't block, because this might take a while
-            env_vars = {"VJ_API_KEY": VJ_API_KEY, "PATH": os.environ["PATH"]}
-            logging.info(
-                f"launching viewer with: {edit['asset_id']} {project}.mp4 {proj.name}"
-            )
-            subprocess.Popen(
-                [
-                    "uv",
-                    "run",
-                    "viewer",
-                    edit["asset_id"],
-                    f"video-edit-{project}.mp4",
-                    proj.name,
-                ],
-                env=env_vars,
-            )
-        except Exception as e:
-            logging.info(f"Error running viewer: {e}")
         if created:
             # we created a new project so let the user / LLM know
             logging.info(f"created new project {proj.name} and created edit {edit}")

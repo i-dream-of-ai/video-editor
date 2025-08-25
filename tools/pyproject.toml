@@ -14,5 +14,3 @@ email = "kirk@zothcorp.com"
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
-[project.scripts]
-viewer = "viewer.viewer:main"
